@@ -58,6 +58,7 @@ public class MainActivity extends AppCompatActivity {
   private double mLatitude;
   private double mLongitude;
   private String mAddress;
+  static int p = 0;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -102,7 +103,6 @@ public class MainActivity extends AppCompatActivity {
           if (intent.hasExtra("duration")) {
             mBinding.contentMain.duration.setText(intent.getStringExtra("duration"));
           }
-          Toast.makeText(MainActivity.this, "mAddress: " + mAddress, Toast.LENGTH_LONG).show();
         }
       }
     };
@@ -111,8 +111,6 @@ public class MainActivity extends AppCompatActivity {
 
     mBinding.contentMain.record.setOnClickListener(v -> startTracking());
     mBinding.contentMain.pause.setOnClickListener(v -> stopTracking());
-    mBinding.contentMain.refresh.setOnClickListener(v -> stopTracking());
-    mBinding.contentMain.stop.setOnClickListener(v -> stopTracking());
 
     LocalBroadcastManager.getInstance(this)
         .registerReceiver(mBroadcastReceiver, new IntentFilter(BROADCAST_DETECTED_ACTIVITY));
