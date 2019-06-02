@@ -40,73 +40,16 @@
         android:layout_alignParentBottom="true"
         android:orientation="vertical">
 
-        <LinearLayout
-          android:layout_width="match_parent"
-          android:layout_height="wrap_content"
-          android:padding="8dp"
-          android:orientation="horizontal"
-          android:visibility="visible">
-
-          <ImageView
-            android:id="@+id/img_activity"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:tint="#606060"/>
-
-          <TextView
-            android:id="@+id/txt_activity"
-            android:textStyle="bold"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:textAllCaps="true"
-            android:textColor="@color/colorPrimary"
-            android:textSize="18sp"/>
-
-          <TextView
-            android:id="@+id/txt_confidence"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:layout_gravity="center_horizontal"
-            android:textAllCaps="true"
-            android:textSize="14sp"/>
-
-        </LinearLayout>
-
-        <RelativeLayout
+        <TextView
+          android:id="@+id/address"
           android:layout_width="match_parent"
           android:layout_height="wrap_content"
           android:paddingTop="8dp"
-          android:paddingStart="8dp"
-          android:paddingEnd="8dp"
-          android:orientation="horizontal">
-
-          <TextView
-            android:id="@+id/location_result"
-            android:textStyle="bold"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentStart="true"
-            android:textColor="@android:color/black"/>
-
-          <TextView
-            android:id="@+id/updated_time"
-            android:textStyle="bold"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true"
-            android:textColor="@android:color/black"/>
-
-        </RelativeLayout>
-
-        <TextView
-          android:id="@+id/address"
-          android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
-          android:paddingStart="8dp"
-          android:paddingEnd="8dp"
-          android:textColor="@android:color/black"/>
+          android:paddingBottom="8dp"
+          android:paddingStart="16dp"
+          android:paddingEnd="16dp"
+          android:textColor="@android:color/black"
+          android:visibility="gone"/>
 
         <LinearLayout
           android:layout_width="match_parent"
@@ -116,7 +59,7 @@
           android:weightSum="3">
 
           <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:paddingTop="16dp"
@@ -141,7 +84,7 @@
           </LinearLayout>
 
           <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:paddingTop="16dp"
@@ -149,6 +92,7 @@
             android:orientation="vertical">
 
             <TextView
+              android:id="@+id/duration"
               android:textStyle="bold"
               android:layout_width="wrap_content"
               android:layout_height="wrap_content"
@@ -165,7 +109,7 @@
           </LinearLayout>
 
           <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:paddingTop="16dp"
@@ -201,30 +145,30 @@
 
           <ImageView
             android:id="@+id/record"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:layout_width="@dimen/icon"
+            android:layout_height="@dimen/icon"
             android:src="@drawable/ic_circle"
             android:visibility="@{status == `record` ? View.VISIBLE : View.GONE}"/>
 
           <ImageView
             android:id="@+id/pause"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:layout_width="@dimen/icon"
+            android:layout_height="@dimen/icon"
             android:src="@drawable/ic_pause"
             android:visibility="@{status == `pause` ? View.VISIBLE : View.GONE}"/>
 
           <ImageView
             android:id="@+id/refresh"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:layout_width="@dimen/icon"
+            android:layout_height="@dimen/icon"
             android:layout_marginEnd="16dp"
             android:src="@drawable/ic_refresh"
             android:visibility="@{status == `stop` ? View.VISIBLE : View.GONE}"/>
 
           <ImageView
             android:id="@+id/stop"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:layout_width="@dimen/icon"
+            android:layout_height="@dimen/icon"
             android:layout_marginStart="16dp"
             android:src="@drawable/ic_stop"
             android:visibility="@{status == `stop` ? View.VISIBLE : View.GONE}"/>

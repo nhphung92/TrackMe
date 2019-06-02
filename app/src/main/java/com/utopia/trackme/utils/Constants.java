@@ -1,4 +1,4 @@
-package com.utopia.trackme;
+package com.utopia.trackme.utils;
 
 public class Constants {
 
