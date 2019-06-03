@@ -1,4 +1,4 @@
-package com.utopia.trackme;
+package com.utopia.trackme.services;
 
 import android.annotation.SuppressLint;
 import android.app.Service;
@@ -121,7 +121,7 @@ public class TrackMeService extends Service {
         long endTime = System.currentTimeMillis();
         long seconds = (endTime - mStartTime) / 1000;
         String duration = MyUtils.convertTime(seconds);
-        Intent intent = new Intent(Constants.BROADCAST_DETECTED_ACTIVITY);
+        Intent intent = new Intent(Constants.BROADCAST_DETECTED_LOCATION);
         intent.putExtra("duration", duration);
         LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent);
       }
@@ -129,7 +129,7 @@ public class TrackMeService extends Service {
   }
 
   private void sendBroadcastLocation(Location location) {
-    Intent intent = new Intent(Constants.BROADCAST_DETECTED_ACTIVITY);
+    Intent intent = new Intent(Constants.BROADCAST_DETECTED_LOCATION);
     intent.putExtra("latitude", location.getLatitude());
     intent.putExtra("longitude", location.getLongitude());
 

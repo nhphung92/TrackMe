@@ -6,7 +6,8 @@ import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 import androidx.room.TypeConverters;
-import com.google.maps.model.LatLng;
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
 import com.utopia.trackme.data.local.Converters;
 import java.util.List;
 
@@ -15,47 +16,63 @@ public class SessionResponse implements Parcelable {
 
   @PrimaryKey
   @ColumnInfo(name = "session_id")
-  private int sessionId;
+  @SerializedName("session_id")
+  @Expose
+  private long sessionId;
 
   @ColumnInfo(name = "start_time")
+  @SerializedName("start_time")
+  @Expose
   private long startTime;
 
   @ColumnInfo(name = "end_time")
+  @SerializedName("end_time")
+  @Expose
   private long endTime;
 
   @ColumnInfo(name = "distance")
+  @SerializedName("distance")
+  @Expose
   private double distance;
 
   @ColumnInfo(name = "duration")
+  @SerializedName("duration")
+  @Expose
   private double duration;
 
   @ColumnInfo(name = "average_speed")
+  @SerializedName("average_speed")
+  @Expose
   private double averageSpeed;
 
   @ColumnInfo(name = "locations")
+  @SerializedName("locations")
+  @Expose
   @TypeConverters(Converters.class)
-  private List<LatLng> locations;
+  private List<MyLatLng> locations;
 
   public SessionResponse() {
   }
 
   protected SessionResponse(Parcel in) {
-    sessionId = in.readInt();
+    sessionId = in.readLong();
     startTime = in.readLong();
     endTime = in.readLong();
     distance = in.readDouble();
     duration = in.readDouble();
     averageSpeed = in.readDouble();
+    locations = in.createTypedArrayList(MyLatLng.CREATOR);
   }
 
   @Override
   public void writeToParcel(Parcel dest, int flags) {
-    dest.writeInt(sessionId);
+    dest.writeLong(sessionId);
     dest.writeLong(startTime);
     dest.writeLong(endTime);
     dest.writeDouble(distance);
     dest.writeDouble(duration);
     dest.writeDouble(averageSpeed);
+    dest.writeTypedList(locations);
   }
 
   @Override
@@ -75,11 +92,11 @@ public class SessionResponse implements Parcelable {
     }
   };
 
-  public int getSessionId() {
+  public long getSessionId() {
     return sessionId;
   }
 
-  public void setSessionId(int sessionId) {
+  public void setSessionId(long sessionId) {
     this.sessionId = sessionId;
   }
 
@@ -123,11 +140,11 @@ public class SessionResponse implements Parcelable {
     this.averageSpeed = averageSpeed;
   }
 
-  public List<LatLng> getLocations() {
+  public List<MyLatLng> getLocations() {
     return locations;
   }
 
-  public void setLocations(List<LatLng> locations) {
+  public void setLocations(List<MyLatLng> locations) {
     this.locations = locations;
   }
 }

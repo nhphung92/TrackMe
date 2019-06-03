@@ -19,13 +19,14 @@
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         android:background="?attr/colorPrimary"
-        app:popupTheme="@style/AppTheme.PopupOverlay"/>
+        app:navigationIcon="@drawable/ic_back"
+        app:titleTextColor="@color/white"/>
 
     </com.google.android.material.appbar.AppBarLayout>
 
     <include
       android:id="@+id/content_main"
-      layout="@layout/content_location"/>
+      layout="@layout/content_session_detail"/>
 
   </androidx.coordinatorlayout.widget.CoordinatorLayout>
 

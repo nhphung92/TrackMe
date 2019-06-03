@@ -62,7 +62,7 @@ dependencies {
     implementation 'com.google.maps:google-maps-services:0.2.4'
 
     // Dexter runtime permissions
-    implementation 'com.karumi:dexter:4.2.0'
+    implementation 'com.karumi:dexter:5.0.0'
 
     // room
     implementation "android.arch.persistence.room:runtime:1.1.1"

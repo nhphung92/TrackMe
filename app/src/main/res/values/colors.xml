@@ -3,4 +3,21 @@
   <color name="colorPrimary">#008577</color>
   <color name="colorPrimaryDark">#00574B</color>
   <color name="colorAccent">#D81B60</color>
+  <color name="colorIcon">#303030</color>
+  <color name="white">#ffffff</color>
+  <color name="black">#000000</color>
+  <color name="grey">#9C9792</color>
+  <color name="bg">#F2F2F2</color>
+  <color name="red">#F24848</color>
+  <color name="green">#31B057</color>
+  <color name="blue">#0074E4</color>
+  <color name="line">#9C9792</color>
+  <color name="yellow">#FDD835</color>
+  <color name="purple">#3E3DBA</color>
+  <color name="transparent">#00000000</color>
+  <color name="shadow">#80102027</color>
+  <color name="white_shadow">#99000000</color>
+  <color name="bronze">#F8E9DD</color>
+  <color name="silver">#EAEBEC</color>
+  <color name="gold">#FFFAE6</color>
 </resources>

@@ -21,9 +21,9 @@ public class SystemUtils {
   }
 
   public static String formatDate(long timeSTamp) {
-    DateFormat formatter = new SimpleDateFormat("hh:mm:ss dd/MM/yyyy", Locale.ENGLISH);
+    DateFormat formatter = new SimpleDateFormat("dd/MM/yyyy hh:mm:ss", Locale.ENGLISH);
     Calendar calendar = Calendar.getInstance();
-    calendar.setTimeInMillis(timeSTamp * 1000);
+    calendar.setTimeInMillis(timeSTamp);
     return formatter.format(calendar.getTime());
   }
 
@@ -32,14 +32,14 @@ public class SystemUtils {
     return format.format(Double.valueOf(price));
   }
 
-  public static String getTimeAgo(long mReferenceTime) {
+  public static String getTimeAgo(long timeSTamp) {
     long now = System.currentTimeMillis();
-    final long diff = now - mReferenceTime;
+    final long diff = now - timeSTamp;
     if (diff < DateUtils.WEEK_IN_MILLIS) {
       return (diff <= 1000) ?
           "just now" :
           DateUtils
-              .getRelativeTimeSpanString(mReferenceTime, now, DateUtils.MINUTE_IN_MILLIS,
+              .getRelativeTimeSpanString(timeSTamp, now, DateUtils.MINUTE_IN_MILLIS,
                   DateUtils.FORMAT_ABBREV_RELATIVE).toString();
     } else if (diff <= 4 * DateUtils.WEEK_IN_MILLIS) {
       int week = (int) (diff / (DateUtils.WEEK_IN_MILLIS));

@@ -2,9 +2,10 @@
   <string name="app_name">Track Me</string>
   <string name="action_history">History</string>
   <string name="title_activity_maps">Map</string>
-  <string name="distance">Distance (km)</string>
+  <string name="distance">Distance (m)</string>
   <string name="time">00:00</string>
   <string name="avg_speed">Avg. Speed (min/km)</string>
+  <string name="average_speed">Avg. Speed</string>
   <string name="duration">Duration</string>
   <string name="distance_default">0,00</string>
   <string name="activity_in_vehicle">In Vehicle</string>
@@ -18,4 +19,13 @@
   <string name="pause">Pause</string>
   <string name="stop">Stop</string>
   <string name="resume">Resume</string>
+  <string name="no_sessions_here">No sessions here</string>
+  <string name="sessions">Sessions</string>
+  <string name="check_play_services_msg">You need to install Google Play Services to use the App properly</string>
+  <string name="settings">Settings</string>
+  <string name="permission_denied">Permission denied</string>
+  <string name="enable_location">Enable location</string>
+  <string name="request_setting_message">Open Settings, the tap on To Permissions and turn on Location</string>
+  <string name="distance_text">Distance</string>
+  <string name="session_details">Session Details</string>
 </resources>
