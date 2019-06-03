@@ -133,7 +133,7 @@ public class SessionResponse implements Parcelable {
   }
 
   public double getAverageSpeed() {
-    return averageSpeed;
+    return distance / duration;
   }
 
   public void setAverageSpeed(double averageSpeed) {

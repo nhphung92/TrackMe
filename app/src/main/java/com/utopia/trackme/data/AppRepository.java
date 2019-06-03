@@ -3,7 +3,6 @@ package com.utopia.trackme.data;
 import android.app.Application;
 import android.location.Location;
 import androidx.lifecycle.MutableLiveData;
-import com.google.maps.model.LatLng;
 import com.utopia.trackme.data.local.AppDatabase;
 import com.utopia.trackme.data.local.dao.SessionDao;
 import com.utopia.trackme.data.remote.pojo.MyLatLng;

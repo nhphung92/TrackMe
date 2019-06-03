@@ -2,9 +2,7 @@ package com.utopia.trackme.views.sessiondetails;
 
 import static com.utopia.trackme.utils.MyConstants.EXTRA_SESSION;
 
-import android.location.Location;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.databinding.DataBindingUtil;
@@ -24,20 +22,22 @@ import com.utopia.trackme.utils.FetchURL;
 import com.utopia.trackme.utils.MyUtils;
 import com.utopia.trackme.utils.TaskLoadedCallback;
 import com.utopia.trackme.views.main.LocationActivity;
+import java.text.DecimalFormat;
 import java.util.Objects;
 
-public class SessionDetailsActivity extends AppCompatActivity implements OnMapReadyCallback,
+public class SessionDetailsActivity extends AppCompatActivity implements
+    OnMapReadyCallback,
     TaskLoadedCallback {
 
   private static final String TAG = LocationActivity.class.getSimpleName();
 
   ActivitySessionDetailsBinding mBinding;
   private GoogleMap mGoogleMap;
-  private MarkerOptions place1, place2;
+  private MarkerOptions mPlace1, mPlace2;
   private Polyline currentPolyline;
   SessionResponse mSession;
-  LatLng startLatLng;
-  LatLng endLatLng;
+  LatLng mStartLatLng;
+  LatLng mEndLatLng;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -47,7 +47,8 @@ public class SessionDetailsActivity extends AppCompatActivity implements OnMapRe
     mBinding.toolbar.setNavigationOnClickListener(v -> onBackPressed());
 
     mSession = getIntent().getParcelableExtra(EXTRA_SESSION);
-    mBinding.contentMain.distance.setText(String.valueOf(mSession.getDistance()));
+    mBinding.contentMain.distance
+        .setText(new DecimalFormat("#.###").format(mSession.getDistance()));
     mBinding.contentMain.duration.setText(MyUtils.convertTime((long) mSession.getDuration()));
     mBinding.contentMain.speed.setText(String.valueOf(mSession.getAverageSpeed()));
 
@@ -55,20 +56,20 @@ public class SessionDetailsActivity extends AppCompatActivity implements OnMapRe
       @Override
       public void onClick(View view) {
         new FetchURL(SessionDetailsActivity.this)
-            .execute(getUrl(place1.getPosition(), place2.getPosition(), "driving"), "driving");
+            .execute(getUrl(mPlace1.getPosition(), mPlace2.getPosition(), "driving"), "driving");
       }
     });
 
-    //27.658143,85.3199503
-    //27.667491,85.3208583
+    mStartLatLng = new LatLng(
+        mSession.getLocations().get(0).lat,
+        mSession.getLocations().get(0).lng);
 
-    startLatLng = new LatLng(27.658143, 85.3199503);
-    endLatLng = new LatLng(
+    mEndLatLng = new LatLng(
         mSession.getLocations().get(mSession.getLocations().size() - 1).lat,
         mSession.getLocations().get(mSession.getLocations().size() - 1).lng);
 
-    place1 = new MarkerOptions().position(startLatLng).title("Location 1");
-    place2 = new MarkerOptions().position(endLatLng).title("Location 2");
+    mPlace1 = new MarkerOptions().position(mStartLatLng).title("Location 1");
+    mPlace2 = new MarkerOptions().position(mEndLatLng).title("Location 2");
 
     SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
         .findFragmentById(R.id.fragment);
@@ -87,10 +88,8 @@ public class SessionDetailsActivity extends AppCompatActivity implements OnMapRe
     // Output format
     String output = "json";
     // Building the url to the web service
-    String url =
-        "https://maps.googleapis.com/maps/api/directions/" + output + "?" + parameters + "&key="
-            + getString(R.string.google_maps_key);
-    return url;
+    return "https://maps.googleapis.com/maps/api/directions/" + output + "?" + parameters + "&key="
+        + getString(R.string.google_maps_key);
   }
 
   @Override
@@ -100,36 +99,20 @@ public class SessionDetailsActivity extends AppCompatActivity implements OnMapRe
     overridePendingTransition(0, 0);
   }
 
-  private void moveCamera(Location location) {
-    if (mGoogleMap != null) {
-      LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-      mGoogleMap.clear();
-      mGoogleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15));
-      mGoogleMap.animateCamera(CameraUpdateFactory
-          .newCameraPosition(new CameraPosition.Builder().target(latLng).zoom(15).build()));
-    }
-  }
-
-  private void addMarker(LatLng latLng) {
-    mGoogleMap.clear();
-    mGoogleMap.addMarker(new MarkerOptions().position(latLng));
-  }
-
   @Override
   public void onMapReady(GoogleMap googleMap) {
     mGoogleMap = googleMap;
-    Log.d("mylog", "Added Markers");
-    mGoogleMap.addMarker(place1);
-    mGoogleMap.addMarker(place2);
+    mGoogleMap.addMarker(mPlace1);
+    mGoogleMap.addMarker(mPlace2);
 
-    CameraPosition googlePlex = CameraPosition.builder()
-        .target(endLatLng)
+    CameraPosition cameraPosition = CameraPosition.builder()
+        .target(mEndLatLng)
         .zoom(7)
         .bearing(0)
         .tilt(45)
         .build();
 
-    mGoogleMap.animateCamera(CameraUpdateFactory.newCameraPosition(googlePlex), 5000, null);
+    mGoogleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition), 5000, null);
   }
 
   @Override

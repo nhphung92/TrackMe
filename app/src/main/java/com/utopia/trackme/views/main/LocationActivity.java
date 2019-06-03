@@ -4,6 +4,7 @@ import static com.utopia.trackme.utils.Constants.BROADCAST_DETECTED_LOCATION;
 import static com.utopia.trackme.utils.MyConstants.EXTRA_CODE;
 import static com.utopia.trackme.utils.MyConstants.SEND_DURATION;
 import static com.utopia.trackme.utils.MyConstants.SEND_LOCATION;
+import static com.utopia.trackme.utils.MyConstants.SEND_RESET;
 
 import android.Manifest;
 import android.Manifest.permission;
@@ -77,6 +78,12 @@ public class LocationActivity extends AppCompatActivity {
         int code = intent.getIntExtra(EXTRA_CODE, 0);
 
         switch (code) {
+          case SEND_RESET:
+            mGoogleMap.clear();
+            mBinding.contentMain.duration.setText(R.string.time);
+            mBinding.contentMain.distance.setText(R.string.distance_default);
+            mBinding.contentMain.speed.setText(R.string.time);
+            break;
           case SEND_DURATION:
             mBinding.contentMain.duration.setText(intent.getStringExtra("duration"));
             break;

@@ -12,7 +12,7 @@ import java.net.URL;
 
 public class FetchURL extends AsyncTask<String, Void, String> {
 
-  Context mContext;
+  private Context mContext;
   String directionMode = "driving";
 
   public FetchURL(Context mContext) {
