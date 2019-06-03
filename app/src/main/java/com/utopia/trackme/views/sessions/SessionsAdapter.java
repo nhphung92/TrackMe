@@ -9,7 +9,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.utopia.trackme.R;
 import com.utopia.trackme.data.remote.pojo.SessionResponse;
 import com.utopia.trackme.databinding.LayoutSessionItemBinding;
-import com.utopia.trackme.utils.MyUtils;
 import com.utopia.trackme.utils.SystemUtils;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -80,7 +79,7 @@ public class SessionsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
 
     void bind(SessionResponse session, int position, OnItemClickListener listener) {
       mBinding.distance.setText(new DecimalFormat("#.###m").format(session.getDistance()));
-      mBinding.duration.setText(MyUtils.convertTime((long) session.getDuration()));
+      mBinding.duration.setText(SystemUtils.convertTime((long) session.getDuration()));
       mBinding.averageSpeed.setText(new DecimalFormat("#.# m/s").format(session.getAverageSpeed()));
       mBinding.startTime.setText(SystemUtils.getTimeAgo(session.getStartTime()));
       mBinding.layoutMain

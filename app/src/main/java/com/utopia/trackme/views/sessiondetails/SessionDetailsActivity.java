@@ -3,9 +3,9 @@ package com.utopia.trackme.views.sessiondetails;
 import static com.utopia.trackme.utils.MyConstants.EXTRA_SESSION;
 
 import android.os.Bundle;
-import android.view.View;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.databinding.DataBindingUtil;
+import androidx.lifecycle.ViewModelProviders;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -19,29 +19,29 @@ import com.utopia.trackme.R;
 import com.utopia.trackme.data.remote.pojo.SessionResponse;
 import com.utopia.trackme.databinding.ActivitySessionDetailsBinding;
 import com.utopia.trackme.utils.FetchURL;
-import com.utopia.trackme.utils.MyUtils;
+import com.utopia.trackme.utils.SystemUtils;
 import com.utopia.trackme.utils.TaskLoadedCallback;
-import com.utopia.trackme.views.main.LocationActivity;
 import java.text.DecimalFormat;
 import java.util.Objects;
 
-public class SessionDetailsActivity extends AppCompatActivity implements
-    OnMapReadyCallback,
+public class SessionDetailsActivity extends AppCompatActivity implements OnMapReadyCallback,
     TaskLoadedCallback {
-
-  private static final String TAG = LocationActivity.class.getSimpleName();
 
   ActivitySessionDetailsBinding mBinding;
   private GoogleMap mGoogleMap;
   private MarkerOptions mPlace1, mPlace2;
-  private Polyline currentPolyline;
+  private Polyline mCurrentPolyline;
   SessionResponse mSession;
   LatLng mStartLatLng;
   LatLng mEndLatLng;
+  private Polyline currentPolyline;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+
+    SessionDetailsViewModel viewModel = ViewModelProviders.of(this)
+        .get(SessionDetailsViewModel.class);
     mBinding = DataBindingUtil.setContentView(this, R.layout.activity_session_details);
     setSupportActionBar(mBinding.toolbar);
     mBinding.toolbar.setNavigationOnClickListener(v -> onBackPressed());
@@ -49,16 +49,8 @@ public class SessionDetailsActivity extends AppCompatActivity implements
     mSession = getIntent().getParcelableExtra(EXTRA_SESSION);
     mBinding.contentMain.distance
         .setText(new DecimalFormat("#.###").format(mSession.getDistance()));
-    mBinding.contentMain.duration.setText(MyUtils.convertTime((long) mSession.getDuration()));
+    mBinding.contentMain.duration.setText(SystemUtils.convertTime((long) mSession.getDuration()));
     mBinding.contentMain.speed.setText(String.valueOf(mSession.getAverageSpeed()));
-
-    mBinding.contentMain.btnGetDirection.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View view) {
-        new FetchURL(SessionDetailsActivity.this)
-            .execute(getUrl(mPlace1.getPosition(), mPlace2.getPosition(), "driving"), "driving");
-      }
-    });
 
     mStartLatLng = new LatLng(
         mSession.getLocations().get(0).lat,
@@ -74,6 +66,20 @@ public class SessionDetailsActivity extends AppCompatActivity implements
     SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
         .findFragmentById(R.id.fragment);
     Objects.requireNonNull(mapFragment).getMapAsync(this);
+
+    viewModel.getPolylineOptions().observe(this, polylineOptions -> {
+      if (mCurrentPolyline != null) {
+        mCurrentPolyline.remove();
+      }
+      mCurrentPolyline = mGoogleMap.addPolyline(polylineOptions);
+    });
+  }
+
+  @Override
+  public void onBackPressed() {
+    super.onBackPressed();
+    finish();
+    overridePendingTransition(0, 0);
   }
 
   private String getUrl(LatLng origin, LatLng dest, String directionMode) {
@@ -93,26 +99,17 @@ public class SessionDetailsActivity extends AppCompatActivity implements
   }
 
   @Override
-  public void onBackPressed() {
-    super.onBackPressed();
-    finish();
-    overridePendingTransition(0, 0);
-  }
-
-  @Override
   public void onMapReady(GoogleMap googleMap) {
     mGoogleMap = googleMap;
     mGoogleMap.addMarker(mPlace1);
     mGoogleMap.addMarker(mPlace2);
 
-    CameraPosition cameraPosition = CameraPosition.builder()
-        .target(mEndLatLng)
-        .zoom(7)
-        .bearing(0)
-        .tilt(45)
-        .build();
+    mGoogleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(mEndLatLng, 15));
+    mGoogleMap.animateCamera(CameraUpdateFactory
+        .newCameraPosition(new CameraPosition.Builder().target(mEndLatLng).zoom(15).build()));
 
-    mGoogleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition), 5000, null);
+    new FetchURL(this)
+        .execute(getUrl(mPlace1.getPosition(), mPlace2.getPosition(), "driving"), "driving");
   }
 
   @Override

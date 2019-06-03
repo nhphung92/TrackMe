@@ -2,14 +2,18 @@ package com.utopia.trackme.data.remote.pojo;
 
 import android.os.Parcel;
 import android.os.Parcelable;
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
 
 public class MyLatLng implements Parcelable {
 
+  @SerializedName("lat")
+  @Expose
   public double lat;
-  public double lng;
 
-  public MyLatLng() {
-  }
+  @SerializedName("lng")
+  @Expose
+  public double lng;
 
   public MyLatLng(double lat, double lng) {
     this.lat = lat;

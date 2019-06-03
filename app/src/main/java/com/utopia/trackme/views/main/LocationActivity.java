@@ -1,6 +1,6 @@
 package com.utopia.trackme.views.main;
 
-import static com.utopia.trackme.utils.Constants.BROADCAST_DETECTED_LOCATION;
+import static com.utopia.trackme.utils.MyConstants.BROADCAST_DETECTED_LOCATION;
 import static com.utopia.trackme.utils.MyConstants.EXTRA_CODE;
 import static com.utopia.trackme.utils.MyConstants.SEND_DURATION;
 import static com.utopia.trackme.utils.MyConstants.SEND_LOCATION;

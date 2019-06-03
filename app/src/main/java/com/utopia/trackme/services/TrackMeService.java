@@ -1,5 +1,7 @@
 package com.utopia.trackme.services;
 
+import static com.utopia.trackme.utils.MyConstants.BROADCAST_DETECTED_LOCATION;
+
 import android.annotation.SuppressLint;
 import android.app.Service;
 import android.content.Intent;
@@ -21,8 +23,7 @@ import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResponse;
 import com.google.android.gms.location.SettingsClient;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.utopia.trackme.utils.Constants;
-import com.utopia.trackme.utils.MyUtils;
+import com.utopia.trackme.utils.SystemUtils;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.List;
@@ -120,8 +121,8 @@ public class TrackMeService extends Service {
       public void run() {
         long endTime = System.currentTimeMillis();
         long seconds = (endTime - mStartTime) / 1000;
-        String duration = MyUtils.convertTime(seconds);
-        Intent intent = new Intent(Constants.BROADCAST_DETECTED_LOCATION);
+        String duration = SystemUtils.convertTime(seconds);
+        Intent intent = new Intent(BROADCAST_DETECTED_LOCATION);
         intent.putExtra("duration", duration);
         LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent);
       }
@@ -129,7 +130,7 @@ public class TrackMeService extends Service {
   }
 
   private void sendBroadcastLocation(Location location) {
-    Intent intent = new Intent(Constants.BROADCAST_DETECTED_LOCATION);
+    Intent intent = new Intent(BROADCAST_DETECTED_LOCATION);
     intent.putExtra("latitude", location.getLatitude());
     intent.putExtra("longitude", location.getLongitude());
 

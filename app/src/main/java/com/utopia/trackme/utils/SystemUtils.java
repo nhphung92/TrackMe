@@ -5,11 +5,6 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.text.format.DateUtils;
 import com.utopia.trackme.data.MyApplication;
-import java.text.DateFormat;
-import java.text.NumberFormat;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Locale;
 
 public class SystemUtils {
 
@@ -18,18 +13,6 @@ public class SystemUtils {
         .getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
     NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
     return activeNetwork != null && activeNetwork.isConnectedOrConnecting();
-  }
-
-  public static String formatDate(long timeSTamp) {
-    DateFormat formatter = new SimpleDateFormat("dd/MM/yyyy hh:mm:ss", Locale.ENGLISH);
-    Calendar calendar = Calendar.getInstance();
-    calendar.setTimeInMillis(timeSTamp);
-    return formatter.format(calendar.getTime());
-  }
-
-  public static String formatNumber(int price) {
-    NumberFormat format = NumberFormat.getInstance(Locale.ENGLISH);
-    return format.format(Double.valueOf(price));
   }
 
   public static String getTimeAgo(long timeSTamp) {
@@ -51,5 +34,20 @@ public class SystemUtils {
       int year = (int) (diff / DateUtils.YEAR_IN_MILLIS);
       return year > 1 ? year + " years ago" : year + " year ago";
     }
+  }
+
+  public static String convertTime(long time) {
+    long hours = time / 3600;
+    long minutes = (time % 3600) / 60;
+    long seconds = (time % 3600) % 60;
+
+    String hoursStr = hours < 10 ? "0" + hours : String.valueOf(hours);
+    String minutesStr = minutes < 10 ? "0" + minutes : String.valueOf(minutes);
+    String secondsStr = seconds < 10 ? "0" + seconds : String.valueOf(seconds);
+
+    if (hours == 0) {
+      return minutesStr + ":" + secondsStr;
+    }
+    return hoursStr + ":" + minutesStr + ":" + secondsStr;
   }
 }

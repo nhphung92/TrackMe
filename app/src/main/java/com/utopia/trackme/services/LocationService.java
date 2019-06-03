@@ -1,5 +1,6 @@
 package com.utopia.trackme.services;
 
+import static com.utopia.trackme.utils.MyConstants.BROADCAST_DETECTED_LOCATION;
 import static com.utopia.trackme.utils.MyConstants.EXTRA_CODE;
 import static com.utopia.trackme.utils.MyConstants.SEND_DURATION;
 import static com.utopia.trackme.utils.MyConstants.SEND_LOCATION;
@@ -22,8 +23,7 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import com.utopia.trackme.data.AppRepository;
 import com.utopia.trackme.data.remote.pojo.MyLatLng;
 import com.utopia.trackme.data.remote.pojo.SessionResponse;
-import com.utopia.trackme.utils.Constants;
-import com.utopia.trackme.utils.MyUtils;
+import com.utopia.trackme.utils.SystemUtils;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.List;
@@ -110,7 +110,7 @@ public class LocationService extends Service
           }, 0, 1000), mStartTime, location);
     } catch (Exception e) {
       e.printStackTrace();
-      Intent intent = new Intent(Constants.BROADCAST_DETECTED_LOCATION);
+      Intent intent = new Intent(BROADCAST_DETECTED_LOCATION);
       intent.putExtra(EXTRA_CODE, SEND_RESET);
       LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
@@ -133,7 +133,7 @@ public class LocationService extends Service
     super.onDestroy();
     Log.d(TAG, "onDestroy");
     mTimer.cancel();
-    Intent intent = new Intent(Constants.BROADCAST_DETECTED_LOCATION);
+    Intent intent = new Intent(BROADCAST_DETECTED_LOCATION);
     intent.putExtra(EXTRA_CODE, SEND_RESET);
     LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
   }
@@ -178,12 +178,12 @@ public class LocationService extends Service
       AppRepository.getInstance().updateSession(mSession);
     }
 
-    Intent intent = new Intent(Constants.BROADCAST_DETECTED_LOCATION);
+    Intent intent = new Intent(BROADCAST_DETECTED_LOCATION);
     intent.putExtra(EXTRA_CODE, SEND_LOCATION);
     intent.putExtra("latitude", location.getLatitude());
     intent.putExtra("longitude", location.getLongitude());
     intent.putExtra("address", getAddress(location));
-    intent.putExtra("duration", MyUtils.convertTime(durations));
+    intent.putExtra("duration", SystemUtils.convertTime(durations));
     intent.putExtra("distance", new DecimalFormat("#.###").format(distance));
     intent.putExtra("speed", speed > 0.0 ? new DecimalFormat("#.##").format(speed) : "0,00");
     LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
@@ -217,9 +217,9 @@ public class LocationService extends Service
   }
 
   private void sendBroadcastDuration() {
-    Intent intent = new Intent(Constants.BROADCAST_DETECTED_LOCATION);
+    Intent intent = new Intent(BROADCAST_DETECTED_LOCATION);
     intent.putExtra(EXTRA_CODE, SEND_DURATION);
-    intent.putExtra("duration", MyUtils.convertTime((mEndTime - mStartTime) / 1000));
+    intent.putExtra("duration", SystemUtils.convertTime((mEndTime - mStartTime) / 1000));
     LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
   }
 }

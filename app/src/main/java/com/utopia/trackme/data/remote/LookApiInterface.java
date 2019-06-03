@@ -1,18 +1,16 @@
 package com.utopia.trackme.data.remote;
 
+import com.utopia.trackme.data.remote.pojo.DirectionsResponse;
+import io.reactivex.Observable;
+import retrofit2.http.GET;
+import retrofit2.http.Query;
+
 public interface LookApiInterface {
 
-//  @GET("users?")
-//  Observable<UserListResponse> getUserList(
-//      @Query("page") int page,
-//      @Query("pagesize") int pagesize,
-//      @Query("site") String site);
-//
-//  @GET("users/{userid}/reputation-history")
-//  Observable<ReputationHistoryListResponse> getReputationHistory(
-//      @Path("userid") int userId,
-//      @Query("page") int page,
-//      @Query("pagesize") int pagesize,
-//      @Query("site") String site
-//  );
+  @GET("directions/json?")
+  Observable<DirectionsResponse> getDirections(
+      @Query("origin") String origin,
+      @Query("destination") String destination,
+      @Query("mode") String mode,
+      @Query("key") String key);
 }
