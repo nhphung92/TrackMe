@@ -1,5 +1,7 @@
 package com.utopia.trackme.utils;
 
+import static com.utopia.trackme.utils.MyConstants.DIRECTION_MODE;
+
 import android.content.Context;
 import android.graphics.Color;
 import android.os.AsyncTask;
@@ -13,8 +15,8 @@ import org.json.JSONObject;
 
 public class PointsParser extends AsyncTask<String, Integer, List<List<HashMap<String, String>>>> {
 
-  TaskLoadedCallback taskCallback;
-  String directionMode = "driving";
+  private TaskLoadedCallback taskCallback;
+  private String directionMode = DIRECTION_MODE;
 
   public PointsParser(Context mContext, String directionMode) {
     this.taskCallback = (TaskLoadedCallback) mContext;

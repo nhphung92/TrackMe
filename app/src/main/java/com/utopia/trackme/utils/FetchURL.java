@@ -1,5 +1,7 @@
 package com.utopia.trackme.utils;
 
+import static com.utopia.trackme.utils.MyConstants.DIRECTION_MODE;
+
 import android.content.Context;
 import android.os.AsyncTask;
 import android.util.Log;
@@ -12,8 +14,8 @@ import java.net.URL;
 
 public class FetchURL extends AsyncTask<String, Void, String> {
 
-  Context mContext;
-  String directionMode = "driving";
+  private Context mContext;
+  private String directionMode = DIRECTION_MODE;
 
   public FetchURL(Context mContext) {
     this.mContext = mContext;
@@ -55,7 +57,7 @@ public class FetchURL extends AsyncTask<String, Void, String> {
       // Reading data from url
       iStream = urlConnection.getInputStream();
       BufferedReader br = new BufferedReader(new InputStreamReader(iStream));
-      StringBuffer sb = new StringBuffer();
+      StringBuilder sb = new StringBuilder();
       String line = "";
       while ((line = br.readLine()) != null) {
         sb.append(line);

@@ -1,5 +1,6 @@
 package com.utopia.trackme.views.sessiondetails;
 
+import static com.utopia.trackme.utils.MyConstants.DIRECTION_MODE;
 import static com.utopia.trackme.utils.MyConstants.EXTRA_SESSION;
 
 import android.os.Bundle;
@@ -110,7 +111,7 @@ public class SessionDetailsActivity extends AppCompatActivity implements OnMapRe
         .newCameraPosition(new CameraPosition.Builder().target(mEndLatLng).zoom(15).build()));
 
     new FetchURL(this)
-        .execute(getUrl(mPlace1.getPosition(), mPlace2.getPosition(), "driving"), "driving");
+        .execute(getUrl(mPlace1.getPosition(), mPlace2.getPosition(), DIRECTION_MODE), DIRECTION_MODE);
   }
 
   @Override
