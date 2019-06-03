@@ -49,8 +49,9 @@ public class SessionDetailsActivity extends AppCompatActivity implements OnMapRe
     mSession = getIntent().getParcelableExtra(EXTRA_SESSION);
     mBinding.contentMain.distance
         .setText(new DecimalFormat("#.###").format(mSession.getDistance()));
+    mBinding.contentMain.speed
+        .setText(new DecimalFormat("#.###").format(mSession.getAverageSpeed()));
     mBinding.contentMain.duration.setText(SystemUtils.convertTime((long) mSession.getDuration()));
-    mBinding.contentMain.speed.setText(String.valueOf(mSession.getAverageSpeed()));
 
     mStartLatLng = new LatLng(
         mSession.getLocations().get(0).lat,
