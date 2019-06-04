@@ -7,6 +7,7 @@ import static com.utopia.trackme.utils.MyConstants.EXTRA_DURATION;
 import static com.utopia.trackme.utils.MyConstants.EXTRA_MESSAGE;
 import static com.utopia.trackme.utils.MyConstants.EXTRA_SESSION;
 import static com.utopia.trackme.utils.MyConstants.EXTRA_SPEED;
+import static com.utopia.trackme.utils.MyConstants.EXTRA_STATUS;
 import static com.utopia.trackme.utils.MyConstants.SEND_RESET;
 import static com.utopia.trackme.utils.MyConstants.SEND_SESSION;
 
@@ -34,7 +35,7 @@ import java.util.TimerTask;
 public class LocationService extends Service implements LocationListener {
 
   private static final String TAG = LocationService.class.getSimpleName();
-  private Timer mTimer = new Timer();
+  private Timer mTimer;
   private SessionResponse mSession;
   private Location mFirstLocation, mLastLocation;
   private long mStartTime;
@@ -112,58 +113,64 @@ public class LocationService extends Service implements LocationListener {
         AppRepository.getInstance().startSession(mSession);
 
         // start timer
-        mTimer.scheduleAtFixedRate(new TimerTask() {
-          @Override
-          public void run() {
-
-            // set end time
-            mEndTime = System.currentTimeMillis();
-
-            if (!mSession.getLocations().isEmpty()) {
-              MyLatLng lastLatLng = mSession.getLocations().get(mSession.getLocations().size() - 1);
-              Location lastLocationOld = new Location("");
-              lastLocationOld.setLatitude(lastLatLng.lat);
-              lastLocationOld.setLongitude(lastLatLng.lng);
-              mFirstLocation = lastLocationOld;
-            }
-
-            // distance (meters)
-            distance = distance + SystemUtils.calculationByDistance(mFirstLocation, mLastLocation);
-
-            // durations (second), milliseconds -> seconds
-            durations = getDuration(); // seconds
-
-            // speed (m/s)
-            speed = durations > 0 && distance > 0 ? distance / durations : 0.0;
-            mSpeeds.add(speed);
-
-            double totalSpeed = 0;
-            for (double d : mSpeeds) {
-              totalSpeed += d;
-            }
-            double averageSpeed = totalSpeed / mSpeeds.size();
-
-            mSession.setEndTime(mEndTime);
-            mSession.setAverageSpeed(String.valueOf(averageSpeed));
-            mSession.setDuration(String.valueOf(durations));
-            mSession.setDistance(String.valueOf(distance));
-            mSession.getLocations()
-                .add(new MyLatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude()));
-            AppRepository.getInstance().updateSession(mSession);
-
-            sendBroadcastSession(mFirstLocation, mLastLocation, durations, distance, speed);
-
-            Log.i(TAG, "distance (meters): " + distance);
-            Log.i(TAG, "durations (second): " + durations);
-            Log.i(TAG, "speed (m/s): " + speed);
-            Log.i(TAG, "averageSpeed (m/s): " + averageSpeed);
-          }
-        }, 0, 1000);
+        startTimer();
       }
     } catch (Exception e) {
       e.printStackTrace();
       sendBroadcastError(e.getMessage());
     }
+  }
+
+  private void startTimer() {
+    mTimer = new Timer();
+    mTimer.scheduleAtFixedRate(new TimerTask() {
+
+      @Override
+      public void run() {
+
+        // set end time
+        mEndTime = System.currentTimeMillis();
+
+        if (!mSession.getLocations().isEmpty()) {
+          MyLatLng lastLatLng = mSession.getLocations().get(mSession.getLocations().size() - 1);
+          Location lastLocationOld = new Location("");
+          lastLocationOld.setLatitude(lastLatLng.lat);
+          lastLocationOld.setLongitude(lastLatLng.lng);
+          mFirstLocation = lastLocationOld;
+        }
+
+        // distance (meters)
+        distance = distance + SystemUtils.calculationByDistance(mFirstLocation, mLastLocation);
+
+        // durations (second), milliseconds -> seconds
+        durations = getDuration(); // seconds
+
+        // speed (m/s)
+        speed = durations > 0 && distance > 0 ? distance / durations : 0.0;
+        mSpeeds.add(speed);
+
+        double totalSpeed = 0;
+        for (double d : mSpeeds) {
+          totalSpeed += d;
+        }
+        double averageSpeed = totalSpeed / mSpeeds.size();
+
+        mSession.setEndTime(mEndTime);
+        mSession.setAverageSpeed(String.valueOf(averageSpeed));
+        mSession.setDuration(String.valueOf(durations));
+        mSession.setDistance(String.valueOf(distance));
+        mSession.getLocations()
+            .add(new MyLatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude()));
+        AppRepository.getInstance().updateSession(mSession);
+
+        sendBroadcastSession(durations, distance, speed);
+
+        Log.i(TAG, "distance (meters): " + distance);
+        Log.i(TAG, "durations (second): " + durations);
+        Log.i(TAG, "speed (m/s): " + speed);
+        Log.i(TAG, "averageSpeed (m/s): " + averageSpeed);
+      }
+    }, 0, 1000);
   }
 
   private SessionResponse initSession() {
@@ -195,6 +202,15 @@ public class LocationService extends Service implements LocationListener {
   @Override
   public int onStartCommand(Intent intent, int flags, int startId) {
     super.onStartCommand(intent, flags, startId);
+    String status = intent.getStringExtra(EXTRA_STATUS);
+    Log.d(TAG, "onStartCommand: " + status);
+
+    if ("pause".equals(status)) {
+      mTimer.cancel();
+    } else if ("resume".equals(status)) {
+      mStartTime = mStartTime + (System.currentTimeMillis() - mEndTime);
+      startTimer();
+    }
     return START_NOT_STICKY;
   }
 
@@ -204,12 +220,6 @@ public class LocationService extends Service implements LocationListener {
     Log.d(TAG, "onDestroy");
     mTimer.cancel();
     mLocationManager.removeUpdates(this);
-
-    mEndTime = System.currentTimeMillis();
-    mSession.setEndTime(mEndTime);
-    mSession.setDuration(String.valueOf((getDuration())));
-
-    AppRepository.getInstance().updateSession(mSession);
 
     Intent intent = new Intent(BROADCAST_DETECTED_LOCATION);
     intent.putExtra(EXTRA_CODE, SEND_RESET);
@@ -248,8 +258,7 @@ public class LocationService extends Service implements LocationListener {
   public void onProviderDisabled(String provider) {
   }
 
-  private void sendBroadcastSession(Location firstLocation, Location lastLocation,
-      long durations, double distance, double speed) {
+  private void sendBroadcastSession(long durations, double distance, double speed) {
     Intent intent = new Intent(BROADCAST_DETECTED_LOCATION);
     intent.putExtra(EXTRA_CODE, SEND_SESSION);
     intent.putExtra(EXTRA_SESSION, mSession);

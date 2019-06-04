@@ -6,6 +6,7 @@ import static com.utopia.trackme.utils.MyConstants.EXTRA_DISTANCE;
 import static com.utopia.trackme.utils.MyConstants.EXTRA_DURATION;
 import static com.utopia.trackme.utils.MyConstants.EXTRA_SESSION;
 import static com.utopia.trackme.utils.MyConstants.EXTRA_SPEED;
+import static com.utopia.trackme.utils.MyConstants.EXTRA_STATUS;
 import static com.utopia.trackme.utils.MyConstants.SEND_RESET;
 import static com.utopia.trackme.utils.MyConstants.SEND_SESSION;
 
@@ -78,60 +79,6 @@ public class MainActivity extends AppCompatActivity {
   private LocationCallback mLocationCallback;
   private MainViewModel mViewModel;
 
-  BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
-
-    @SuppressLint("SetTextI18n")
-    @Override
-    public void onReceive(Context context, Intent intent) {
-      if (BROADCAST_DETECTED_LOCATION.equals(intent.getAction())) {
-
-        int code = intent.getIntExtra(EXTRA_CODE, 0);
-
-        switch (code) {
-          case SEND_RESET:
-            mGoogleMap.clear();
-            mBinding.contentMain.duration.setText(R.string.time);
-            mBinding.contentMain.distance.setText(R.string.distance_default);
-            mBinding.contentMain.speed.setText(R.string.distance_default);
-            break;
-          case SEND_SESSION:
-
-            if (intent.hasExtra(EXTRA_DURATION)) {
-              mBinding.contentMain.duration.setText(intent.getStringExtra(EXTRA_DURATION));
-            }
-            if (intent.hasExtra(EXTRA_DISTANCE)) {
-              mBinding.contentMain.distance.setText(intent.getStringExtra(EXTRA_DISTANCE));
-            }
-
-            if (intent.hasExtra(EXTRA_SPEED)) {
-              mBinding.contentMain.speed.setText(intent.getStringExtra(EXTRA_SPEED));
-            }
-
-            mGoogleMap.clear();
-
-            SessionResponse session = intent.getParcelableExtra(EXTRA_SESSION);
-            for (int i = 0; i < session.getLocations().size() - 1; i++) {
-              LatLng latLng1 = new LatLng(session.getLocations().get(i).lat,
-                  session.getLocations().get(i).lng);
-              LatLng latLng2 = new LatLng(session.getLocations().get(i + 1).lat,
-                  session.getLocations().get(i + 1).lng);
-              mGoogleMap.addPolyline(new PolylineOptions()
-                  .add(latLng1, latLng2)
-                  .width(20)
-                  .color(Color.RED));
-            }
-
-            // add a marker for first location
-            MyLatLng firstLat = session.getLocations().get(0);
-
-            mGoogleMap
-                .addMarker(new MarkerOptions().position(new LatLng(firstLat.lat, firstLat.lng)));
-            break;
-        }
-      }
-    }
-  };
-
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -167,8 +114,8 @@ public class MainActivity extends AppCompatActivity {
 
     mBinding.contentMain.setStatus("record");
     mBinding.contentMain.record.setOnClickListener(v -> startTracking());
-    mBinding.contentMain.pause.setOnClickListener(v -> stopTracking());
-    mBinding.contentMain.refresh.setOnClickListener(v -> stopTracking());
+    mBinding.contentMain.pause.setOnClickListener(v -> pauseTracking());
+    mBinding.contentMain.refresh.setOnClickListener(v -> resumeTracking());
     mBinding.contentMain.stop.setOnClickListener(v -> stopTracking());
   }
 
@@ -323,11 +270,27 @@ public class MainActivity extends AppCompatActivity {
     if (!mViewModel.isRecordEnabled()) {
       mViewModel.setRecordEnabled(true);
       mBinding.contentMain.setStatus("pause");
-      startService(new Intent(this, LocationService.class));
+      startTrackerService("start");
     } else {
       Snackbar.make(mBinding.contentMain.layoutBottom, R.string.session_is_running,
           Snackbar.LENGTH_LONG).show();
     }
+  }
+
+  private void resumeTracking() {
+    mBinding.contentMain.setStatus("pause");
+    startTrackerService("resume");
+  }
+
+  private void pauseTracking() {
+    mBinding.contentMain.setStatus("stop");
+    startTrackerService("pause");
+  }
+
+  private void startTrackerService(String status) {
+    Intent intent = new Intent(this, LocationService.class);
+    intent.putExtra(EXTRA_STATUS, status);
+    startService(intent);
   }
 
   private void stopTracking() {
@@ -335,4 +298,58 @@ public class MainActivity extends AppCompatActivity {
     mBinding.contentMain.setStatus("record");
     stopService(new Intent(this, LocationService.class));
   }
+
+  BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
+
+    @SuppressLint("SetTextI18n")
+    @Override
+    public void onReceive(Context context, Intent intent) {
+      if (BROADCAST_DETECTED_LOCATION.equals(intent.getAction())) {
+
+        int code = intent.getIntExtra(EXTRA_CODE, 0);
+
+        switch (code) {
+          case SEND_RESET:
+            mGoogleMap.clear();
+            mBinding.contentMain.duration.setText(R.string.time);
+            mBinding.contentMain.distance.setText(R.string.distance_default);
+            mBinding.contentMain.speed.setText(R.string.distance_default);
+            break;
+          case SEND_SESSION:
+
+            if (intent.hasExtra(EXTRA_DURATION)) {
+              mBinding.contentMain.duration.setText(intent.getStringExtra(EXTRA_DURATION));
+            }
+            if (intent.hasExtra(EXTRA_DISTANCE)) {
+              mBinding.contentMain.distance.setText(intent.getStringExtra(EXTRA_DISTANCE));
+            }
+
+            if (intent.hasExtra(EXTRA_SPEED)) {
+              mBinding.contentMain.speed.setText(intent.getStringExtra(EXTRA_SPEED));
+            }
+
+            mGoogleMap.clear();
+
+            SessionResponse session = intent.getParcelableExtra(EXTRA_SESSION);
+            for (int i = 0; i < session.getLocations().size() - 1; i++) {
+              LatLng latLng1 = new LatLng(session.getLocations().get(i).lat,
+                  session.getLocations().get(i).lng);
+              LatLng latLng2 = new LatLng(session.getLocations().get(i + 1).lat,
+                  session.getLocations().get(i + 1).lng);
+              mGoogleMap.addPolyline(new PolylineOptions()
+                  .add(latLng1, latLng2)
+                  .width(20)
+                  .color(Color.RED));
+            }
+
+            // add a marker for first location
+            MyLatLng firstLat = session.getLocations().get(0);
+
+            mGoogleMap
+                .addMarker(new MarkerOptions().position(new LatLng(firstLat.lat, firstLat.lng)));
+            break;
+        }
+      }
+    }
+  };
 }
