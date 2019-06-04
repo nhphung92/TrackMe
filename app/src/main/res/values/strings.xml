@@ -22,4 +22,6 @@
   <string name="check_play_services_msg">You need to install Google Play Services to use the App properly</string>
   <string name="no_internet_connection">No internet connection</string>
   <string name="action_clear">Clear All</string>
+  <string name="title_activity_main2">Main2Activity</string>
+  <string name="session_is_running">Session is running</string>
 </resources>

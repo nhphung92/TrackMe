@@ -68,6 +68,12 @@ public class SessionsActivity extends AppCompatActivity {
         }
       }
     });
+
+    mBinding.fab.setOnClickListener(view -> {
+      setResult(RESULT_OK);
+      finish();
+      overridePendingTransition(0, 0);
+    });
   }
 
   private void loadMore() {

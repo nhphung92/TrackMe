@@ -13,10 +13,4 @@ public class MyConstants {
   public static final String EXTRA_DISTANCE = "distance";
   public static final String EXTRA_SPEED = "speed";
   public static final String EXTRA_DURATION = "duration";
-
-  public static final String EXTRA_LATIUDE1 = "latitude1";
-  public static final String EXTRA_LATIUDE2 = "latitude2";
-
-  public static final String EXTRA_LONGITUDE1 = "longitude1";
-  public static final String EXTRA_LONGITUDE2 = "longitude2";
 }

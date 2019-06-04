@@ -27,10 +27,12 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.databinding.DataBindingUtil;
+import androidx.lifecycle.ViewModelProviders;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
@@ -50,6 +52,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.material.snackbar.Snackbar;
 import com.utopia.trackme.R;
 import com.utopia.trackme.data.remote.pojo.MyLatLng;
 import com.utopia.trackme.data.remote.pojo.SessionResponse;
@@ -60,9 +63,9 @@ import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
 
-  private static final String TAG1 = MainActivity.class.getSimpleName();
   private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
   private static final int REQUEST_LOCATIONS = 100;
+  private static final int RQ_NEW_SESSION = 1;
 
   ActivityLocationBinding mBinding;
 
@@ -73,6 +76,7 @@ public class MainActivity extends AppCompatActivity {
   private LocationRequest mLocationRequest;
   private LocationSettingsRequest mLocationSettingsRequest;
   private LocationCallback mLocationCallback;
+  private MainViewModel mViewModel;
 
   BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
 
@@ -131,6 +135,9 @@ public class MainActivity extends AppCompatActivity {
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+
+    mViewModel = ViewModelProviders.of(this).get(MainViewModel.class);
+
     mBinding = DataBindingUtil.setContentView(this, R.layout.activity_location);
     setSupportActionBar(mBinding.toolbar);
 
@@ -210,11 +217,44 @@ public class MainActivity extends AppCompatActivity {
   public boolean onOptionsItemSelected(MenuItem item) {
     int id = item.getItemId();
     if (id == R.id.action_history) {
-      startActivity(new Intent(this, SessionsActivity.class));
+      startActivityForResult(new Intent(this, SessionsActivity.class), RQ_NEW_SESSION);
       overridePendingTransition(0, 0);
       return true;
     }
     return super.onOptionsItemSelected(item);
+  }
+
+  @Override
+  public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+      @NonNull int[] grantResults) {
+    if (requestCode == REQUEST_LOCATIONS) {
+
+      if (grantResults.length == 2
+          && grantResults[0] == PackageManager.PERMISSION_GRANTED
+          && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
+        detectLocation();
+      } else {
+        if (!ActivityCompat
+            .shouldShowRequestPermissionRationale(this, permission.ACCESS_FINE_LOCATION) &&
+            !ActivityCompat
+                .shouldShowRequestPermissionRationale(this, permission.ACCESS_COARSE_LOCATION)) {
+          displaySettingsDialog(getString(R.string.enable_location),
+              getString(R.string.request_setting_message));
+        } else {
+          Toast.makeText(this, R.string.permission_denied, Toast.LENGTH_SHORT).show();
+        }
+      }
+    } else {
+      super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
+  }
+
+  @Override
+  protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+    super.onActivityResult(requestCode, resultCode, data);
+    if (requestCode == RQ_NEW_SESSION && resultCode == RESULT_OK) {
+      startTracking();
+    }
   }
 
   private void onMyMapReady(GoogleMap googleMap) {
@@ -269,31 +309,6 @@ public class MainActivity extends AppCompatActivity {
         .show();
   }
 
-  @Override
-  public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
-      @NonNull int[] grantResults) {
-    if (requestCode == REQUEST_LOCATIONS) {
-
-      if (grantResults.length == 2
-          && grantResults[0] == PackageManager.PERMISSION_GRANTED
-          && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
-        detectLocation();
-      } else {
-        if (!ActivityCompat
-            .shouldShowRequestPermissionRationale(this, permission.ACCESS_FINE_LOCATION) &&
-            !ActivityCompat
-                .shouldShowRequestPermissionRationale(this, permission.ACCESS_COARSE_LOCATION)) {
-          displaySettingsDialog(getString(R.string.enable_location),
-              getString(R.string.request_setting_message));
-        } else {
-          Toast.makeText(this, R.string.permission_denied, Toast.LENGTH_SHORT).show();
-        }
-      }
-    } else {
-      super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-    }
-  }
-
   private void moveCamera(Location location) {
     if (mGoogleMap != null) {
       LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
@@ -304,16 +319,19 @@ public class MainActivity extends AppCompatActivity {
     }
   }
 
-  private void addMarker(LatLng latLng) {
-    mGoogleMap.addMarker(new MarkerOptions().position(latLng));
-  }
-
   private void startTracking() {
-    mBinding.contentMain.setStatus("pause");
-    startService(new Intent(this, LocationService.class));
+    if (!mViewModel.isRecordEnabled()) {
+      mViewModel.setRecordEnabled(true);
+      mBinding.contentMain.setStatus("pause");
+      startService(new Intent(this, LocationService.class));
+    } else {
+      Snackbar.make(mBinding.contentMain.layoutBottom, R.string.session_is_running,
+          Snackbar.LENGTH_LONG).show();
+    }
   }
 
   private void stopTracking() {
+    mViewModel.setRecordEnabled(false);
     mBinding.contentMain.setStatus("record");
     stopService(new Intent(this, LocationService.class));
   }

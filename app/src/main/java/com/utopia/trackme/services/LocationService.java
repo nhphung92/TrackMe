@@ -4,9 +4,6 @@ import static com.utopia.trackme.utils.MyConstants.BROADCAST_DETECTED_LOCATION;
 import static com.utopia.trackme.utils.MyConstants.EXTRA_CODE;
 import static com.utopia.trackme.utils.MyConstants.EXTRA_DISTANCE;
 import static com.utopia.trackme.utils.MyConstants.EXTRA_DURATION;
-import static com.utopia.trackme.utils.MyConstants.EXTRA_LATIUDE1;
-import static com.utopia.trackme.utils.MyConstants.EXTRA_LONGITUDE1;
-import static com.utopia.trackme.utils.MyConstants.EXTRA_LONGITUDE2;
 import static com.utopia.trackme.utils.MyConstants.EXTRA_MESSAGE;
 import static com.utopia.trackme.utils.MyConstants.EXTRA_SESSION;
 import static com.utopia.trackme.utils.MyConstants.EXTRA_SPEED;
@@ -108,7 +105,8 @@ public class LocationService extends Service implements LocationListener {
         mSession = initSession();
 
         if (mFirstLocation != null) {
-          mSession.addLocation(new MyLatLng(mFirstLocation.getLatitude(), mFirstLocation.getLongitude()));
+          mSession.addLocation(
+              new MyLatLng(mFirstLocation.getLatitude(), mFirstLocation.getLongitude()));
         }
 
         AppRepository.getInstance().startSession(mSession);
@@ -255,10 +253,6 @@ public class LocationService extends Service implements LocationListener {
     Intent intent = new Intent(BROADCAST_DETECTED_LOCATION);
     intent.putExtra(EXTRA_CODE, SEND_SESSION);
     intent.putExtra(EXTRA_SESSION, mSession);
-    intent.putExtra(EXTRA_LATIUDE1, firstLocation.getLatitude());
-    intent.putExtra(EXTRA_LONGITUDE1, firstLocation.getLongitude());
-    intent.putExtra(EXTRA_LATIUDE1, lastLocation.getLatitude());
-    intent.putExtra(EXTRA_LONGITUDE2, lastLocation.getLongitude());
     intent.putExtra(EXTRA_DURATION, SystemUtils.convertTime(durations));
     intent.putExtra(EXTRA_DISTANCE, distance > 0.0 ? SystemUtils.formatNumber(distance) : "0,00");
     intent.putExtra(EXTRA_SPEED, speed > 0.0 ? SystemUtils.formatNumber(speed) : "0,00");
