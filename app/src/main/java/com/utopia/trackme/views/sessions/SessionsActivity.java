@@ -7,10 +7,12 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.databinding.DataBindingUtil;
 import androidx.lifecycle.ViewModelProviders;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import com.utopia.trackme.R;
 import com.utopia.trackme.databinding.ActivitySessionsBinding;
 import com.utopia.trackme.views.sessiondetails.SessionDetailsActivity;
@@ -46,7 +48,30 @@ public class SessionsActivity extends AppCompatActivity {
       mAdapter.setData(list);
       mAdapter.notifyDataSetChanged();
       mBinding.layoutEmpty.setVisibility(list.isEmpty() ? View.VISIBLE : View.GONE);
+      mBinding.swipeContainer.setRefreshing(false);
     });
+
+    mBinding.swipeContainer.setOnRefreshListener(() -> mViewModel.getSessions());
+
+    mBinding.recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+
+      @Override
+      public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
+        super.onScrollStateChanged(recyclerView, newState);
+      }
+
+      @Override
+      public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+        super.onScrolled(recyclerView, dx, dy);
+        if (!mAdapter.isLoading() && !recyclerView.canScrollVertically(1)) {
+          loadMore();
+        }
+      }
+    });
+  }
+
+  private void loadMore() {
+
   }
 
   @Override

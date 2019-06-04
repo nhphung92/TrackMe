@@ -79,7 +79,7 @@ public class SessionsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
 
     void bind(SessionResponse session, int position, OnItemClickListener listener) {
       mBinding.duration.setText(SystemUtils.convertTime(Long.parseLong(session.getDuration())));
-      mBinding.startTime.setText(SystemUtils.getTimeAgo(session.getStartTime()));
+      mBinding.startTime.setText(SystemUtils.getTimeAgo(session.getEndTime()));
       mBinding.distance
           .setText(new DecimalFormat("#.### miles").format(Double.valueOf(session.getDistance())));
       mBinding.averageSpeed.setText(
