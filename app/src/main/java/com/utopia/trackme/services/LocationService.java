@@ -2,6 +2,7 @@ package com.utopia.trackme.services;
 
 import static com.utopia.trackme.utils.MyConstants.BROADCAST_DETECTED_LOCATION;
 import static com.utopia.trackme.utils.MyConstants.EXTRA_CODE;
+import static com.utopia.trackme.utils.MyConstants.EXTRA_MESSAGE;
 import static com.utopia.trackme.utils.MyConstants.SEND_DURATION;
 import static com.utopia.trackme.utils.MyConstants.SEND_LOCATION;
 import static com.utopia.trackme.utils.MyConstants.SEND_RESET;
@@ -25,14 +26,13 @@ import com.utopia.trackme.data.remote.pojo.MyLatLng;
 import com.utopia.trackme.data.remote.pojo.SessionResponse;
 import com.utopia.trackme.utils.SystemUtils;
 import java.io.IOException;
-import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class LocationService extends Service
-    implements LocationListener {
+public class LocationService extends Service implements LocationListener {
 
   private static final String TAG = LocationService.class.getSimpleName();
   private Timer mTimer = new Timer();
@@ -49,18 +49,13 @@ public class LocationService extends Service
   private Location location; // location
 
   // The minimum distance to change Updates in meters
-  private static final long MIN_DISTANCE_CHANGE_FOR_UPDATES = 5; // 5 meters
+  private static final long MIN_DISTANCE_CHANGE_FOR_UPDATES = 1; // 5 meters
 
   // The minimum time between updates in milliseconds
   private static final long MIN_TIME_BW_UPDATES = 1000; // 1 minute
 
   // Declaring a Location Manager
   protected LocationManager mLocationManager;
-
-  public interface SessionCallback {
-
-    void onNewSession(SessionResponse session);
-  }
 
   @SuppressLint("MissingPermission")
   @Override
@@ -77,7 +72,7 @@ public class LocationService extends Service
       isNetworkEnabled = mLocationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
 
       if (!isGPSEnabled && !isNetworkEnabled) {
-        onDestroy();
+        sendBroadcastError("GPS and Network not enabled. Please turn on.");
       } else {
         // First get location from Network Provider
         if (isNetworkEnabled) {
@@ -87,7 +82,6 @@ public class LocationService extends Service
           Log.d("Network", "Network");
           location = mLocationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
         }
-
         // if GPS Enabled get lat/long using GPS Services
         if (isGPSEnabled) {
           mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, MIN_TIME_BW_UPDATES,
@@ -95,25 +89,44 @@ public class LocationService extends Service
           Log.d("GPS Enabled", "GPS Enabled");
           location = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
         }
+
+        mStartTime = System.currentTimeMillis();
+
+        // start session
+        mSession = new SessionResponse();
+        mSession.setSessionId(String.valueOf(mStartTime));
+        mSession.setStartTime(mStartTime);
+        mSession.setEndTime(mStartTime);
+        mSession.setDistance(String.valueOf(0.0));
+        mSession.setDuration(String.valueOf(0.0));
+        mSession.setAverageSpeed(String.valueOf(0.0));
+        mSession.setLocations(new ArrayList<>());
+        if (location != null) {
+          mSession.addLocation(new MyLatLng(location.getLatitude(), location.getLongitude()));
+        }
+        AppRepository.getInstance().startSession(mSession);
+
+        // start timer
+        mTimer.scheduleAtFixedRate(new TimerTask() {
+          @Override
+          public void run() {
+            mEndTime = System.currentTimeMillis();
+            sendBroadcastDuration();
+          }
+        }, 0, 1000);
       }
-
-      mStartTime = System.currentTimeMillis();
-
-      AppRepository.getInstance()
-          .startSession(session -> mTimer.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-              mSession = session;
-              mEndTime = System.currentTimeMillis();
-              sendBroadcastDuration();
-            }
-          }, 0, 1000), mStartTime, location);
     } catch (Exception e) {
       e.printStackTrace();
-      Intent intent = new Intent(BROADCAST_DETECTED_LOCATION);
-      intent.putExtra(EXTRA_CODE, SEND_RESET);
-      LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+      sendBroadcastError(e.getMessage());
     }
+  }
+
+  private void sendBroadcastError(String message) {
+    Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+    Intent intent = new Intent(BROADCAST_DETECTED_LOCATION);
+    intent.putExtra(EXTRA_CODE, SEND_RESET);
+    intent.putExtra(EXTRA_MESSAGE, message);
+    LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
   }
 
   @Nullable
@@ -133,6 +146,8 @@ public class LocationService extends Service
     super.onDestroy();
     Log.d(TAG, "onDestroy");
     mTimer.cancel();
+    mLocationManager.removeUpdates(this);
+
     Intent intent = new Intent(BROADCAST_DETECTED_LOCATION);
     intent.putExtra(EXTRA_CODE, SEND_RESET);
     LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
@@ -152,31 +167,28 @@ public class LocationService extends Service
     } else {
       mLocationEnd = location;
     }
-    // set start location
-    mLocationStart = mLocationEnd;
 
     // set end time
     mEndTime = System.currentTimeMillis();
 
-    // distance
-    double distance = mLocationStart.distanceTo(mLocationEnd); // meters
+    // distance (meters)
+    double distance = SystemUtils
+        .calculationByDistance(mLocationStart.getLatitude(), mLocationStart.getLongitude(),
+            mLocationEnd.getLatitude(),
+            mLocationEnd.getLongitude());
 
-    // durations
+    // durations (second)
     long durations = (mEndTime - mStartTime) / 1000; // seconds
 
-    // speed
-    double speed = distance / durations;
+    // speed (m/s)
+    double speed = durations > 0 && distance > 0 ? distance / durations : 0.0;
 
-    Toast.makeText(this, "speed: " + speed, Toast.LENGTH_LONG).show();
-
-    if (mSession != null) {
-      mSession.setEndTime(mEndTime);
-      mSession.setAverageSpeed(speed);
-      mSession.setDuration(durations);
-      mSession.setDistance(distance);
-      mSession.getLocations().add(new MyLatLng(location.getLatitude(), location.getLongitude()));
-      AppRepository.getInstance().updateSession(mSession);
-    }
+    mSession.setEndTime(mEndTime);
+    mSession.setAverageSpeed(String.valueOf(speed));
+    mSession.setDuration(String.valueOf(durations));
+    mSession.setDistance(String.valueOf(distance));
+    mSession.getLocations().add(new MyLatLng(location.getLatitude(), location.getLongitude()));
+    AppRepository.getInstance().updateSession(mSession);
 
     Intent intent = new Intent(BROADCAST_DETECTED_LOCATION);
     intent.putExtra(EXTRA_CODE, SEND_LOCATION);
@@ -184,24 +196,23 @@ public class LocationService extends Service
     intent.putExtra("longitude", location.getLongitude());
     intent.putExtra("address", getAddress(location));
     intent.putExtra("duration", SystemUtils.convertTime(durations));
-    intent.putExtra("distance", new DecimalFormat("#.###").format(distance));
-    intent.putExtra("speed", speed > 0.0 ? new DecimalFormat("#.##").format(speed) : "0,00");
+    intent.putExtra("distance",
+        distance > 0.0 ? SystemUtils.formatNumber(String.valueOf(distance)) : "0,00");
+    intent
+        .putExtra("speed", speed > 0.0 ? SystemUtils.formatNumber(String.valueOf(speed)) : "0,00");
     LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
   }
 
   @Override
   public void onStatusChanged(String provider, int status, Bundle extras) {
-
   }
 
   @Override
   public void onProviderEnabled(String provider) {
-
   }
 
   @Override
   public void onProviderDisabled(String provider) {
-
   }
 
   private String getAddress(Location location) {

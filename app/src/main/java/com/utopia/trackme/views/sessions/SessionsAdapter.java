@@ -78,10 +78,13 @@ public class SessionsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     }
 
     void bind(SessionResponse session, int position, OnItemClickListener listener) {
-      mBinding.distance.setText(new DecimalFormat("#.###m").format(session.getDistance()));
-      mBinding.duration.setText(SystemUtils.convertTime((long) session.getDuration()));
-      mBinding.averageSpeed.setText(new DecimalFormat("#.# m/s").format(session.getAverageSpeed()));
+      mBinding.duration.setText(SystemUtils.convertTime(Long.parseLong(session.getDuration())));
       mBinding.startTime.setText(SystemUtils.getTimeAgo(session.getStartTime()));
+      mBinding.distance
+          .setText(new DecimalFormat("#.###m").format(Double.valueOf(session.getDistance())));
+      mBinding.averageSpeed.setText(
+          new DecimalFormat("#.# m/s").format(Double.parseDouble(session.getAverageSpeed())));
+
       mBinding.layoutMain
           .setOnClickListener(v -> listener.onItemClick(mBinding.layoutMain, session, position));
     }
@@ -89,7 +92,7 @@ public class SessionsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
 
   public interface OnItemClickListener {
 
-    public void onItemClick(View view, SessionResponse item, int position);
+    void onItemClick(View view, SessionResponse item, int position);
   }
 
 }

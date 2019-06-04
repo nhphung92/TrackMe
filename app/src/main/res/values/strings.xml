@@ -3,7 +3,7 @@
   <string name="action_history">History</string>
   <string name="distance">Distance (m)</string>
   <string name="time">00:00</string>
-  <string name="avg_speed">Avg. Speed (s/m)</string>
+  <string name="avg_speed">Avg. Speed (m/s)</string>
   <string name="average_speed">Avg. Speed</string>
   <string name="duration">Duration</string>
   <string name="distance_text">Distance</string>
@@ -19,4 +19,5 @@
   <string name="enable_location">Enable location</string>
   <string name="request_setting_message">Open Settings, the tap on To Permissions and turn on Location</string>
   <string name="check_play_services_msg">You need to install Google Play Services to use the App properly</string>
+  <string name="no_internet_connection">No internet connection</string>
 </resources>

@@ -4,6 +4,7 @@ import static com.utopia.trackme.utils.MyConstants.DIRECTION_MODE;
 import static com.utopia.trackme.utils.MyConstants.EXTRA_SESSION;
 
 import android.os.Bundle;
+import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.databinding.DataBindingUtil;
 import androidx.lifecycle.ViewModelProviders;
@@ -22,7 +23,6 @@ import com.utopia.trackme.databinding.ActivitySessionDetailsBinding;
 import com.utopia.trackme.utils.FetchURL;
 import com.utopia.trackme.utils.SystemUtils;
 import com.utopia.trackme.utils.TaskLoadedCallback;
-import java.text.DecimalFormat;
 import java.util.Objects;
 
 public class SessionDetailsActivity extends AppCompatActivity implements OnMapReadyCallback,
@@ -48,11 +48,10 @@ public class SessionDetailsActivity extends AppCompatActivity implements OnMapRe
     mBinding.toolbar.setNavigationOnClickListener(v -> onBackPressed());
 
     mSession = getIntent().getParcelableExtra(EXTRA_SESSION);
-    mBinding.contentMain.distance
-        .setText(new DecimalFormat("#.###").format(mSession.getDistance()));
-    mBinding.contentMain.speed
-        .setText(new DecimalFormat("#.###").format(mSession.getAverageSpeed()));
-    mBinding.contentMain.duration.setText(SystemUtils.convertTime((long) mSession.getDuration()));
+    mBinding.contentMain.distance.setText(SystemUtils.formatNumber(mSession.getDistance()));
+    mBinding.contentMain.speed.setText(SystemUtils.formatNumber(mSession.getAverageSpeed()));
+    mBinding.contentMain.duration
+        .setText(SystemUtils.convertTime(Long.parseLong(mSession.getDuration())));
 
     mStartLatLng = new LatLng(
         mSession.getLocations().get(0).lat,
@@ -110,8 +109,13 @@ public class SessionDetailsActivity extends AppCompatActivity implements OnMapRe
     mGoogleMap.animateCamera(CameraUpdateFactory
         .newCameraPosition(new CameraPosition.Builder().target(mEndLatLng).zoom(15).build()));
 
-    new FetchURL(this)
-        .execute(getUrl(mPlace1.getPosition(), mPlace2.getPosition(), DIRECTION_MODE), DIRECTION_MODE);
+    if (SystemUtils.isNetworkConnected()) {
+      new FetchURL(this)
+          .execute(getUrl(mPlace1.getPosition(), mPlace2.getPosition(), DIRECTION_MODE),
+              DIRECTION_MODE);
+    } else {
+      Toast.makeText(this, R.string.no_internet_connection, Toast.LENGTH_SHORT).show();
+    }
   }
 
   @Override

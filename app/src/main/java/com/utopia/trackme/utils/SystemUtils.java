@@ -4,7 +4,9 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.text.format.DateUtils;
+import android.util.Log;
 import com.utopia.trackme.data.MyApplication;
+import java.text.DecimalFormat;
 
 public class SystemUtils {
 
@@ -49,5 +51,50 @@ public class SystemUtils {
       return minutesStr + ":" + secondsStr;
     }
     return hoursStr + ":" + minutesStr + ":" + secondsStr;
+  }
+
+  public static float getDistance(double lat1, double lng1, double lat2, double lng2) {
+    double earthRadius = 3958.75;
+    double dLat = Math.toRadians(lat2 - lat1);
+    double dLng = Math.toRadians(lng2 - lng1);
+
+    double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+        + Math.cos(Math.toRadians(lat1))
+        * Math.cos(Math.toRadians(lat2)) * Math.sin(dLng / 2)
+        * Math.sin(dLng / 2);
+
+    double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    double dist = earthRadius * c;
+
+    int meterConversion = 1609;
+
+    return (float) (dist * meterConversion);
+
+  }
+
+  public static double calculationByDistance(double lat1, double lon1, double lat2, double lon2) {
+    int Radius = 6371;//radius of earth in Km
+
+    double dLat = Math.toRadians(lat2 - lat1);
+    double dLon = Math.toRadians(lon2 - lon1);
+    double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    double c = 2 * Math.asin(Math.sqrt(a));
+    double valueResult = Radius * c;
+
+    double km = valueResult / 1;
+    DecimalFormat newFormat = new DecimalFormat("####");
+    int kmInDec = Integer.valueOf(newFormat.format(km));
+    double meter = valueResult % 1000;
+    int meterInDec = Integer.valueOf(newFormat.format(meter));
+    Log.i("Radius Value", "" + valueResult + "   KM  " + kmInDec + " Meter   " + meterInDec);
+
+    return valueResult * 1000; // Meter
+  }
+
+  public static String formatNumber(String num) {
+    return new DecimalFormat("#.###").format(num);
   }
 }

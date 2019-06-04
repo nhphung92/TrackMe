@@ -4,7 +4,6 @@ import static com.utopia.trackme.utils.MyConstants.DIRECTION_MODE;
 
 import android.app.Application;
 import android.graphics.Color;
-import android.location.Location;
 import android.util.Log;
 import androidx.lifecycle.MutableLiveData;
 import com.google.android.gms.maps.model.LatLng;
@@ -13,10 +12,8 @@ import com.utopia.trackme.data.local.AppDatabase;
 import com.utopia.trackme.data.local.dao.SessionDao;
 import com.utopia.trackme.data.remote.LookApiClient;
 import com.utopia.trackme.data.remote.pojo.DirectionsResponse;
-import com.utopia.trackme.data.remote.pojo.MyLatLng;
 import com.utopia.trackme.data.remote.pojo.RoutesResponse;
 import com.utopia.trackme.data.remote.pojo.SessionResponse;
-import com.utopia.trackme.services.LocationService.SessionCallback;
 import io.reactivex.Observable;
 import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -77,18 +74,8 @@ public class AppRepository {
         });
   }
 
-  public void startSession(SessionCallback sessionCallback, long startTime, Location location) {
+  public void startSession(SessionResponse session) {
     Observable.fromCallable(() -> {
-      SessionResponse session = new SessionResponse();
-      session.setSessionId(startTime);
-      session.setStartTime(startTime);
-      session.setEndTime(startTime);
-      session.setDistance(0);
-      session.setDuration(0);
-      session.setAverageSpeed(0);
-      List<MyLatLng> latLngs = new ArrayList<>();
-      latLngs.add(new MyLatLng(location.getLatitude(), location.getLongitude()));
-      session.setLocations(latLngs);
       mSessionDao.insert(session);
       return session;
     })
@@ -102,12 +89,12 @@ public class AppRepository {
 
           @Override
           public void onNext(SessionResponse session) {
-            sessionCallback.onNewSession(session);
+
           }
 
           @Override
           public void onError(Throwable e) {
-            sessionCallback.onNewSession(null);
+            e.printStackTrace();
           }
 
           @Override
