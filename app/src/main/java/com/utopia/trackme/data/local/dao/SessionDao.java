@@ -25,4 +25,7 @@ public interface SessionDao {
 
   @Delete
   void delete(SessionResponse session);
+
+  @Delete
+  void delete(List<SessionResponse> session);
 }

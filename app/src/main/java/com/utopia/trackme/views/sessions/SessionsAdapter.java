@@ -81,7 +81,7 @@ public class SessionsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
       mBinding.duration.setText(SystemUtils.convertTime(Long.parseLong(session.getDuration())));
       mBinding.startTime.setText(SystemUtils.getTimeAgo(session.getStartTime()));
       mBinding.distance
-          .setText(new DecimalFormat("#.###m").format(Double.valueOf(session.getDistance())));
+          .setText(new DecimalFormat("#.### miles").format(Double.valueOf(session.getDistance())));
       mBinding.averageSpeed.setText(
           new DecimalFormat("#.# m/s").format(Double.parseDouble(session.getAverageSpeed())));
 

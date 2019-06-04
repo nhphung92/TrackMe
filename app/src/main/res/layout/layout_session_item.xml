@@ -37,12 +37,11 @@
 
         <TextView
           android:id="@+id/distance"
-          android:textStyle="bold"
           android:layout_width="wrap_content"
           android:layout_height="wrap_content"
           android:layout_centerInParent="true"
           android:layout_toEndOf="@+id/distance_text"
-          android:text="0m"
+          android:text="0 miles"
           android:textAppearance="@style/TextAppearance.AppCompat.Medium"
           android:textColor="@color/black"/>
 
@@ -71,7 +70,6 @@
 
         <TextView
           android:id="@+id/duration"
-          android:textStyle="bold"
           android:layout_width="wrap_content"
           android:layout_height="wrap_content"
           android:text="00:00"
@@ -94,7 +92,6 @@
 
         <TextView
           android:id="@+id/average_speed"
-          android:textStyle="bold"
           android:layout_width="wrap_content"
           android:layout_height="wrap_content"
           android:text="0,0 m/s"

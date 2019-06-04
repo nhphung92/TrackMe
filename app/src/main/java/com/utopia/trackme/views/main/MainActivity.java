@@ -2,9 +2,12 @@ package com.utopia.trackme.views.main;
 
 import static com.utopia.trackme.utils.MyConstants.BROADCAST_DETECTED_LOCATION;
 import static com.utopia.trackme.utils.MyConstants.EXTRA_CODE;
-import static com.utopia.trackme.utils.MyConstants.SEND_DURATION;
-import static com.utopia.trackme.utils.MyConstants.SEND_LOCATION;
+import static com.utopia.trackme.utils.MyConstants.EXTRA_DISTANCE;
+import static com.utopia.trackme.utils.MyConstants.EXTRA_DURATION;
+import static com.utopia.trackme.utils.MyConstants.EXTRA_SESSION;
+import static com.utopia.trackme.utils.MyConstants.EXTRA_SPEED;
 import static com.utopia.trackme.utils.MyConstants.SEND_RESET;
+import static com.utopia.trackme.utils.MyConstants.SEND_SESSION;
 
 import android.Manifest;
 import android.Manifest.permission;
@@ -14,6 +17,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
@@ -44,16 +48,19 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.utopia.trackme.R;
+import com.utopia.trackme.data.remote.pojo.MyLatLng;
+import com.utopia.trackme.data.remote.pojo.SessionResponse;
 import com.utopia.trackme.databinding.ActivityLocationBinding;
 import com.utopia.trackme.services.LocationService;
 import com.utopia.trackme.views.sessions.SessionsActivity;
 import java.util.Objects;
 
-public class LocationActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity {
 
-  private static final String TAG1 = LocationActivity.class.getSimpleName();
+  private static final String TAG1 = MainActivity.class.getSimpleName();
   private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
   private static final int REQUEST_LOCATIONS = 100;
 
@@ -66,7 +73,6 @@ public class LocationActivity extends AppCompatActivity {
   private LocationRequest mLocationRequest;
   private LocationSettingsRequest mLocationSettingsRequest;
   private LocationCallback mLocationCallback;
-  private boolean hasMarket = false;
 
   BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
 
@@ -82,23 +88,40 @@ public class LocationActivity extends AppCompatActivity {
             mGoogleMap.clear();
             mBinding.contentMain.duration.setText(R.string.time);
             mBinding.contentMain.distance.setText(R.string.distance_default);
-            mBinding.contentMain.speed.setText(R.string.time);
+            mBinding.contentMain.speed.setText(R.string.distance_default);
             break;
-          case SEND_DURATION:
-            mBinding.contentMain.duration.setText(intent.getStringExtra("duration"));
-            break;
-          case SEND_LOCATION:
-            double latitude = intent.getDoubleExtra("latitude", 0);
-            double longitude = intent.getDoubleExtra("longitude", 0);
-            mBinding.contentMain.location.setText(latitude + ", " + longitude);
-            mBinding.contentMain.address.setText(intent.getStringExtra("address"));
-            mBinding.contentMain.distance.setText(intent.getStringExtra("distance"));
-            mBinding.contentMain.speed.setText(intent.getStringExtra("speed"));
+          case SEND_SESSION:
 
-            if (!hasMarket) {
-              hasMarket = true;
-              addMarker(new LatLng(latitude, longitude));
+            if (intent.hasExtra(EXTRA_DURATION)) {
+              mBinding.contentMain.duration.setText(intent.getStringExtra(EXTRA_DURATION));
             }
+            if (intent.hasExtra(EXTRA_DISTANCE)) {
+              mBinding.contentMain.distance.setText(intent.getStringExtra(EXTRA_DISTANCE));
+            }
+
+            if (intent.hasExtra(EXTRA_SPEED)) {
+              mBinding.contentMain.speed.setText(intent.getStringExtra(EXTRA_SPEED));
+            }
+
+            mGoogleMap.clear();
+
+            SessionResponse session = intent.getParcelableExtra(EXTRA_SESSION);
+            for (int i = 0; i < session.getLocations().size() - 1; i++) {
+              LatLng latLng1 = new LatLng(session.getLocations().get(i).lat,
+                  session.getLocations().get(i).lng);
+              LatLng latLng2 = new LatLng(session.getLocations().get(i + 1).lat,
+                  session.getLocations().get(i + 1).lng);
+              mGoogleMap.addPolyline(new PolylineOptions()
+                  .add(latLng1, latLng2)
+                  .width(20)
+                  .color(Color.RED));
+            }
+
+            // add a marker for first location
+            MyLatLng firstLat = session.getLocations().get(0);
+
+            mGoogleMap
+                .addMarker(new MarkerOptions().position(new LatLng(firstLat.lat, firstLat.lng)));
             break;
         }
       }
@@ -111,9 +134,6 @@ public class LocationActivity extends AppCompatActivity {
     mBinding = DataBindingUtil.setContentView(this, R.layout.activity_location);
     setSupportActionBar(mBinding.toolbar);
 
-    LocalBroadcastManager.getInstance(this)
-        .registerReceiver(mBroadcastReceiver, new IntentFilter(BROADCAST_DETECTED_LOCATION));
-
     mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
     mSettingsClient = LocationServices.getSettingsClient(this);
 
@@ -122,6 +142,7 @@ public class LocationActivity extends AppCompatActivity {
       public void onLocationResult(LocationResult locationResult) {
         super.onLocationResult(locationResult);
         moveCamera(locationResult.getLastLocation());
+        mFusedLocationClient.removeLocationUpdates(mLocationCallback);
       }
     };
 
@@ -145,17 +166,24 @@ public class LocationActivity extends AppCompatActivity {
   }
 
   @Override
+  protected void onPause() {
+    super.onPause();
+    LocalBroadcastManager.getInstance(this).unregisterReceiver(mBroadcastReceiver);
+  }
+
+  @Override
   protected void onResume() {
     super.onResume();
     if (!checkPlayServices()) {
       mBinding.contentMain.location.setText(R.string.check_play_services_msg);
     }
+    LocalBroadcastManager.getInstance(this)
+        .registerReceiver(mBroadcastReceiver, new IntentFilter(BROADCAST_DETECTED_LOCATION));
   }
 
   @Override
   protected void onDestroy() {
     super.onDestroy();
-    LocalBroadcastManager.getInstance(this).unregisterReceiver(mBroadcastReceiver);
   }
 
   private boolean checkPlayServices() {
@@ -277,7 +305,6 @@ public class LocationActivity extends AppCompatActivity {
   }
 
   private void addMarker(LatLng latLng) {
-    mGoogleMap.clear();
     mGoogleMap.addMarker(new MarkerOptions().position(latLng));
   }
 

@@ -2,16 +2,20 @@ package com.utopia.trackme.services;
 
 import static com.utopia.trackme.utils.MyConstants.BROADCAST_DETECTED_LOCATION;
 import static com.utopia.trackme.utils.MyConstants.EXTRA_CODE;
+import static com.utopia.trackme.utils.MyConstants.EXTRA_DISTANCE;
+import static com.utopia.trackme.utils.MyConstants.EXTRA_DURATION;
+import static com.utopia.trackme.utils.MyConstants.EXTRA_LATIUDE1;
+import static com.utopia.trackme.utils.MyConstants.EXTRA_LONGITUDE1;
+import static com.utopia.trackme.utils.MyConstants.EXTRA_LONGITUDE2;
 import static com.utopia.trackme.utils.MyConstants.EXTRA_MESSAGE;
-import static com.utopia.trackme.utils.MyConstants.SEND_DURATION;
-import static com.utopia.trackme.utils.MyConstants.SEND_LOCATION;
+import static com.utopia.trackme.utils.MyConstants.EXTRA_SESSION;
+import static com.utopia.trackme.utils.MyConstants.EXTRA_SPEED;
 import static com.utopia.trackme.utils.MyConstants.SEND_RESET;
+import static com.utopia.trackme.utils.MyConstants.SEND_SESSION;
 
 import android.annotation.SuppressLint;
 import android.app.Service;
 import android.content.Intent;
-import android.location.Address;
-import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -25,10 +29,8 @@ import com.utopia.trackme.data.AppRepository;
 import com.utopia.trackme.data.remote.pojo.MyLatLng;
 import com.utopia.trackme.data.remote.pojo.SessionResponse;
 import com.utopia.trackme.utils.SystemUtils;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -37,8 +39,10 @@ public class LocationService extends Service implements LocationListener {
   private static final String TAG = LocationService.class.getSimpleName();
   private Timer mTimer = new Timer();
   private SessionResponse mSession;
-  private Location mLocationStart;
-  private long mStartTime, mEndTime;
+  private Location mFirstLocation, mLastLocation;
+  private long mStartTime;
+  private long mEndTime;
+  private List<Double> mSpeeds = new ArrayList<>();
 
   // flag for GPS status
   boolean isGPSEnabled = false;
@@ -46,16 +50,20 @@ public class LocationService extends Service implements LocationListener {
   // flag for network status
   boolean isNetworkEnabled = false;
 
-  private Location location; // location
-
   // The minimum distance to change Updates in meters
-  private static final long MIN_DISTANCE_CHANGE_FOR_UPDATES = 1; // 5 meters
+  private static final long MIN_DISTANCE_CHANGE_FOR_UPDATES = 5; // 5 meters
 
   // The minimum time between updates in milliseconds
-  private static final long MIN_TIME_BW_UPDATES = 1000; // 1 minute
+  private static final long MIN_TIME_BW_UPDATES = 1000 * 60 * 1; // 1 minute
 
   // Declaring a Location Manager
   protected LocationManager mLocationManager;
+  private double speed = 0;
+  private double distance = 0;
+  private long durations;
+
+  public LocationService() {
+  }
 
   @SuppressLint("MissingPermission")
   @Override
@@ -74,44 +82,83 @@ public class LocationService extends Service implements LocationListener {
       if (!isGPSEnabled && !isNetworkEnabled) {
         sendBroadcastError("GPS and Network not enabled. Please turn on.");
       } else {
+
         // First get location from Network Provider
         if (isNetworkEnabled) {
           mLocationManager
               .requestLocationUpdates(LocationManager.NETWORK_PROVIDER, MIN_TIME_BW_UPDATES,
                   MIN_DISTANCE_CHANGE_FOR_UPDATES, this);
           Log.d("Network", "Network");
-          location = mLocationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+          mFirstLocation = mLocationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+          mLastLocation = mFirstLocation;
         }
+
         // if GPS Enabled get lat/long using GPS Services
-        if (isGPSEnabled) {
+        if (isGPSEnabled && !isNetworkEnabled) {
           mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, MIN_TIME_BW_UPDATES,
               MIN_DISTANCE_CHANGE_FOR_UPDATES, this);
           Log.d("GPS Enabled", "GPS Enabled");
-          location = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+          mFirstLocation = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+          mLastLocation = mFirstLocation;
         }
 
         mStartTime = System.currentTimeMillis();
 
         // start session
-        mSession = new SessionResponse();
-        mSession.setSessionId(String.valueOf(mStartTime));
-        mSession.setStartTime(mStartTime);
-        mSession.setEndTime(mStartTime);
-        mSession.setDistance(String.valueOf(0.0));
-        mSession.setDuration(String.valueOf(0.0));
-        mSession.setAverageSpeed(String.valueOf(0.0));
-        mSession.setLocations(new ArrayList<>());
-        if (location != null) {
-          mSession.addLocation(new MyLatLng(location.getLatitude(), location.getLongitude()));
+        mSession = initSession();
+
+        if (mFirstLocation != null) {
+          mSession.addLocation(new MyLatLng(mFirstLocation.getLatitude(), mFirstLocation.getLongitude()));
         }
+
         AppRepository.getInstance().startSession(mSession);
 
         // start timer
         mTimer.scheduleAtFixedRate(new TimerTask() {
           @Override
           public void run() {
+
+            // set end time
             mEndTime = System.currentTimeMillis();
-            sendBroadcastDuration();
+
+            if (!mSession.getLocations().isEmpty()) {
+              MyLatLng lastLatLng = mSession.getLocations().get(mSession.getLocations().size() - 1);
+              Location lastLocationOld = new Location("");
+              lastLocationOld.setLatitude(lastLatLng.lat);
+              lastLocationOld.setLongitude(lastLatLng.lng);
+              mFirstLocation = lastLocationOld;
+            }
+
+            // distance (meters)
+            distance = distance + SystemUtils.calculationByDistance(mFirstLocation, mLastLocation);
+
+            // durations (second), milliseconds -> seconds
+            durations = getDuration(); // seconds
+
+            // speed (m/s)
+            speed = durations > 0 && distance > 0 ? distance / durations : 0.0;
+            mSpeeds.add(speed);
+
+            double totalSpeed = 0;
+            for (double d : mSpeeds) {
+              totalSpeed += d;
+            }
+            double averageSpeed = totalSpeed / mSpeeds.size();
+
+            mSession.setEndTime(mEndTime);
+            mSession.setAverageSpeed(String.valueOf(averageSpeed));
+            mSession.setDuration(String.valueOf(durations));
+            mSession.setDistance(String.valueOf(distance));
+            mSession.getLocations()
+                .add(new MyLatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude()));
+            AppRepository.getInstance().updateSession(mSession);
+
+            sendBroadcastSession(mFirstLocation, mLastLocation, durations, distance, speed);
+
+            Log.i(TAG, "distance (meters): " + distance);
+            Log.i(TAG, "durations (second): " + durations);
+            Log.i(TAG, "speed (m/s): " + speed);
+            Log.i(TAG, "averageSpeed (m/s): " + averageSpeed);
           }
         }, 0, 1000);
       }
@@ -119,6 +166,18 @@ public class LocationService extends Service implements LocationListener {
       e.printStackTrace();
       sendBroadcastError(e.getMessage());
     }
+  }
+
+  private SessionResponse initSession() {
+    SessionResponse session = new SessionResponse();
+    session.setSessionId(String.valueOf(mStartTime));
+    session.setStartTime(mStartTime);
+    session.setEndTime(mStartTime);
+    session.setDistance("0.0");
+    session.setDuration("0.0");
+    session.setAverageSpeed("0.0");
+    session.setLocations(new ArrayList<>());
+    return session;
   }
 
   private void sendBroadcastError(String message) {
@@ -148,59 +207,35 @@ public class LocationService extends Service implements LocationListener {
     mTimer.cancel();
     mLocationManager.removeUpdates(this);
 
+    mEndTime = System.currentTimeMillis();
+    mSession.setEndTime(mEndTime);
+    mSession.setDuration(String.valueOf((getDuration())));
+
+    AppRepository.getInstance().updateSession(mSession);
+
     Intent intent = new Intent(BROADCAST_DETECTED_LOCATION);
     intent.putExtra(EXTRA_CODE, SEND_RESET);
     LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
   }
 
+  private long getDuration() {
+    return (mEndTime - mStartTime) / 1000;
+  }
+
   @Override
   public void onLocationChanged(Location location) {
+    Log.d(TAG, "--------------------------");
     Log.d(TAG, "onLocationChanged: " + location.getLatitude() + ", " + location.getLongitude());
     handleLocationChanged(location);
   }
 
   private void handleLocationChanged(Location location) {
-    Location mLocationEnd;
-    if (mLocationStart == null) {
-      mLocationStart = location;
-      mLocationEnd = location;
+    if (mFirstLocation == null) {
+      mFirstLocation = location;
+      mLastLocation = location;
     } else {
-      mLocationEnd = location;
+      mLastLocation = location;
     }
-
-    // set end time
-    mEndTime = System.currentTimeMillis();
-
-    // distance (meters)
-    double distance = SystemUtils
-        .calculationByDistance(mLocationStart.getLatitude(), mLocationStart.getLongitude(),
-            mLocationEnd.getLatitude(),
-            mLocationEnd.getLongitude());
-
-    // durations (second)
-    long durations = (mEndTime - mStartTime) / 1000; // seconds
-
-    // speed (m/s)
-    double speed = durations > 0 && distance > 0 ? distance / durations : 0.0;
-
-    mSession.setEndTime(mEndTime);
-    mSession.setAverageSpeed(String.valueOf(speed));
-    mSession.setDuration(String.valueOf(durations));
-    mSession.setDistance(String.valueOf(distance));
-    mSession.getLocations().add(new MyLatLng(location.getLatitude(), location.getLongitude()));
-    AppRepository.getInstance().updateSession(mSession);
-
-    Intent intent = new Intent(BROADCAST_DETECTED_LOCATION);
-    intent.putExtra(EXTRA_CODE, SEND_LOCATION);
-    intent.putExtra("latitude", location.getLatitude());
-    intent.putExtra("longitude", location.getLongitude());
-    intent.putExtra("address", getAddress(location));
-    intent.putExtra("duration", SystemUtils.convertTime(durations));
-    intent.putExtra("distance",
-        distance > 0.0 ? SystemUtils.formatNumber(String.valueOf(distance)) : "0,00");
-    intent
-        .putExtra("speed", speed > 0.0 ? SystemUtils.formatNumber(String.valueOf(speed)) : "0,00");
-    LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
   }
 
   @Override
@@ -215,22 +250,18 @@ public class LocationService extends Service implements LocationListener {
   public void onProviderDisabled(String provider) {
   }
 
-  private String getAddress(Location location) {
-    Geocoder geocoder = new Geocoder(this, Locale.getDefault());
-    List<Address> addresses;
-    try {
-      addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
-      return addresses.get(0).getAddressLine(0);
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-    return "";
-  }
-
-  private void sendBroadcastDuration() {
+  private void sendBroadcastSession(Location firstLocation, Location lastLocation,
+      long durations, double distance, double speed) {
     Intent intent = new Intent(BROADCAST_DETECTED_LOCATION);
-    intent.putExtra(EXTRA_CODE, SEND_DURATION);
-    intent.putExtra("duration", SystemUtils.convertTime((mEndTime - mStartTime) / 1000));
+    intent.putExtra(EXTRA_CODE, SEND_SESSION);
+    intent.putExtra(EXTRA_SESSION, mSession);
+    intent.putExtra(EXTRA_LATIUDE1, firstLocation.getLatitude());
+    intent.putExtra(EXTRA_LONGITUDE1, firstLocation.getLongitude());
+    intent.putExtra(EXTRA_LATIUDE1, lastLocation.getLatitude());
+    intent.putExtra(EXTRA_LONGITUDE2, lastLocation.getLongitude());
+    intent.putExtra(EXTRA_DURATION, SystemUtils.convertTime(durations));
+    intent.putExtra(EXTRA_DISTANCE, distance > 0.0 ? SystemUtils.formatNumber(distance) : "0,00");
+    intent.putExtra(EXTRA_SPEED, speed > 0.0 ? SystemUtils.formatNumber(speed) : "0,00");
     LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
   }
 }

@@ -23,4 +23,8 @@ public class SessionsViewModel extends AndroidViewModel {
   void getSessions() {
     AppRepository.getInstance().getSessions(bookmarks);
   }
+
+  void deleteAllSession() {
+    AppRepository.getInstance().deleteAllSession(bookmarks);
+  }
 }

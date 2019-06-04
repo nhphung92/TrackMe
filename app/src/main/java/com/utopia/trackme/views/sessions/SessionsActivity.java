@@ -4,6 +4,8 @@ import static com.utopia.trackme.utils.MyConstants.EXTRA_SESSION;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.databinding.DataBindingUtil;
@@ -52,5 +54,21 @@ public class SessionsActivity extends AppCompatActivity {
     super.onBackPressed();
     finish();
     overridePendingTransition(0, 0);
+  }
+
+  @Override
+  public boolean onCreateOptionsMenu(Menu menu) {
+    getMenuInflater().inflate(R.menu.menu_session, menu);
+    return true;
+  }
+
+  @Override
+  public boolean onOptionsItemSelected(MenuItem item) {
+    int id = item.getItemId();
+    if (id == R.id.action_clear) {
+      mViewModel.deleteAllSession();
+      return true;
+    }
+    return super.onOptionsItemSelected(item);
   }
 }

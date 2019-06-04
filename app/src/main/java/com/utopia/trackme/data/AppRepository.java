@@ -1,24 +1,13 @@
 package com.utopia.trackme.data;
 
-import static com.utopia.trackme.utils.MyConstants.DIRECTION_MODE;
-
-import android.app.Application;
-import android.graphics.Color;
-import android.util.Log;
 import androidx.lifecycle.MutableLiveData;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.PolylineOptions;
 import com.utopia.trackme.data.local.AppDatabase;
 import com.utopia.trackme.data.local.dao.SessionDao;
-import com.utopia.trackme.data.remote.LookApiClient;
-import com.utopia.trackme.data.remote.pojo.DirectionsResponse;
-import com.utopia.trackme.data.remote.pojo.RoutesResponse;
 import com.utopia.trackme.data.remote.pojo.SessionResponse;
 import io.reactivex.Observable;
 import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,12 +15,6 @@ import java.util.List;
 public class AppRepository {
 
   private final SessionDao mSessionDao;
-
-  public SessionDao getSessionDao() {
-    return mSessionDao;
-  }
-
-  private Application mApplication = MyApplication.getInstance();
 
   private static AppRepository mInstance;
 
@@ -43,7 +26,7 @@ public class AppRepository {
   }
 
   private AppRepository() {
-    AppDatabase appDatabase = AppDatabase.getDatabase(mApplication);
+    AppDatabase appDatabase = AppDatabase.getDatabase(MyApplication.getInstance());
     mSessionDao = appDatabase.sessionDao();
   }
 
@@ -132,48 +115,22 @@ public class AppRepository {
         });
   }
 
-  public void getDirections(MutableLiveData<PolylineOptions> polylineOptions, String origin,
-      String destination, String directionMode, String key) {
-    LookApiClient.getApiClient().getDirections(origin, destination, directionMode, key)
-        .map((Function<DirectionsResponse, Object>) directions -> {
-          ArrayList<LatLng> points = new ArrayList<>();
-          PolylineOptions lineOptions = new PolylineOptions();
-
-          // Traversing through all the routes
-          for (RoutesResponse routes : directions.getRoutes()) {
-            lineOptions = new PolylineOptions();
-
-            points.add(new LatLng(routes.getBounds().getSouthwest().lat,
-                routes.getBounds().getSouthwest().lng));
-            points.add(new LatLng(routes.getBounds().getNortheast().lat,
-                routes.getBounds().getNortheast().lng));
-
-            // Adding all the points in the route to LineOptions
-            lineOptions.addAll(points);
-
-            if (directionMode.equalsIgnoreCase(DIRECTION_MODE)) {
-              lineOptions.width(10);
-              lineOptions.color(Color.MAGENTA);
-            } else {
-              lineOptions.width(20);
-              lineOptions.color(Color.RED);
-            }
-            Log.d("PointsParser", "onPostExecute lineoptions decoded");
-          }
-
-          return lineOptions;
-        })
+  public void deleteAllSession(MutableLiveData<List<SessionResponse>> sessions) {
+    Observable.fromCallable(() -> {
+      mSessionDao.delete(sessions.getValue());
+      return mSessionDao.getAll();
+    })
         .subscribeOn(Schedulers.io())
         .observeOn(AndroidSchedulers.mainThread())
-        .subscribe(new Observer<Object>() {
+        .subscribe(new Observer<List<SessionResponse>>() {
           @Override
           public void onSubscribe(Disposable d) {
 
           }
 
           @Override
-          public void onNext(Object o) {
-            polylineOptions.postValue((PolylineOptions) o);
+          public void onNext(List<SessionResponse> sessionResponses) {
+            sessions.postValue(sessionResponses);
           }
 
           @Override

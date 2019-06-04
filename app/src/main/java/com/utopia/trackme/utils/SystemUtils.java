@@ -1,6 +1,7 @@
 package com.utopia.trackme.utils;
 
 import android.content.Context;
+import android.location.Location;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.text.format.DateUtils;
@@ -73,13 +74,14 @@ public class SystemUtils {
 
   }
 
-  public static double calculationByDistance(double lat1, double lon1, double lat2, double lon2) {
+  public static double calculationByDistance(Location location1, Location location2) {
     int Radius = 6371;//radius of earth in Km
 
-    double dLat = Math.toRadians(lat2 - lat1);
-    double dLon = Math.toRadians(lon2 - lon1);
+    double dLat = Math.toRadians(location2.getLatitude() - location1.getLatitude());
+    double dLon = Math.toRadians(location2.getLongitude() - location1.getLongitude());
     double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
+        Math.cos(Math.toRadians(location1.getLatitude())) * Math
+            .cos(Math.toRadians(location2.getLatitude())) *
             Math.sin(dLon / 2) * Math.sin(dLon / 2);
     double c = 2 * Math.asin(Math.sqrt(a));
     double valueResult = Radius * c;
@@ -89,12 +91,11 @@ public class SystemUtils {
     int kmInDec = Integer.valueOf(newFormat.format(km));
     double meter = valueResult % 1000;
     int meterInDec = Integer.valueOf(newFormat.format(meter));
-    Log.i("Radius Value", "" + valueResult + "   KM  " + kmInDec + " Meter   " + meterInDec);
-
     return valueResult * 1000; // Meter
   }
 
-  public static String formatNumber(String num) {
-    return new DecimalFormat("#.###").format(num);
+  public static String formatNumber(Double num) {
+    DecimalFormat decimalFormat = new DecimalFormat("###,###.###");
+    return decimalFormat.format(num);
   }
 }
