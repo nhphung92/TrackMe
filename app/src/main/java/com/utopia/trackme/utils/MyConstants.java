@@ -8,7 +8,6 @@ public class MyConstants {
   public static final int SEND_RESET = 2;
 
   public static final String EXTRA_CODE = "code";
-  public static final String EXTRA_MESSAGE = "message";
   public static final String EXTRA_SESSION = "session";
   public static final String EXTRA_DISTANCE = "distance";
   public static final String EXTRA_SPEED = "speed";

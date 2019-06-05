@@ -11,7 +11,6 @@ import static com.utopia.trackme.utils.MyConstants.SEND_RESET;
 import static com.utopia.trackme.utils.MyConstants.SEND_SESSION;
 
 import android.Manifest;
-import android.Manifest.permission;
 import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -20,6 +19,7 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
+import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Looper;
@@ -32,6 +32,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.databinding.DataBindingUtil;
 import androidx.lifecycle.ViewModelProviders;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
@@ -67,6 +68,7 @@ public class MainActivity extends AppCompatActivity {
   private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
   private static final int REQUEST_LOCATIONS = 100;
   private static final int RQ_NEW_SESSION = 1;
+  private static final int PERMISSIONS_REQUEST = 2;
 
   ActivityLocationBinding mBinding;
 
@@ -113,10 +115,43 @@ public class MainActivity extends AppCompatActivity {
     Objects.requireNonNull(mapFragment).getMapAsync(this::onMyMapReady);
 
     mBinding.contentMain.setStatus("record");
-    mBinding.contentMain.record.setOnClickListener(v -> startTracking());
+    mBinding.contentMain.record.setOnClickListener(v -> checkGPSEnabled());
     mBinding.contentMain.pause.setOnClickListener(v -> pauseTracking());
     mBinding.contentMain.refresh.setOnClickListener(v -> resumeTracking());
     mBinding.contentMain.stop.setOnClickListener(v -> stopTracking());
+  }
+
+  private void checkGPSEnabled() {
+    // Check GPS is enabled
+    LocationManager lm = (LocationManager) getSystemService(LOCATION_SERVICE);
+    if (!lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+      Toast.makeText(this, "Please enable location services", Toast.LENGTH_SHORT).show();
+      finish();
+    }
+
+    // Check location permission is granted - if it is, start
+    // the service, otherwise request the permission
+    int permission = ContextCompat.checkSelfPermission(this,
+        Manifest.permission.ACCESS_FINE_LOCATION);
+    if (permission == PackageManager.PERMISSION_GRANTED) {
+      startTracking();
+    } else {
+      ActivityCompat.requestPermissions(this,
+          new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+          PERMISSIONS_REQUEST);
+    }
+  }
+
+  @Override
+  public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+      @NonNull int[] grantResults) {
+    if (requestCode == PERMISSIONS_REQUEST && grantResults.length == 1
+        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+      // Start the service when the permission is granted
+      startTracking();
+    } else {
+      Toast.makeText(this, R.string.permission_denied, Toast.LENGTH_SHORT).show();
+    }
   }
 
   @Override
@@ -171,30 +206,30 @@ public class MainActivity extends AppCompatActivity {
     return super.onOptionsItemSelected(item);
   }
 
-  @Override
-  public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
-      @NonNull int[] grantResults) {
-    if (requestCode == REQUEST_LOCATIONS) {
-
-      if (grantResults.length == 2
-          && grantResults[0] == PackageManager.PERMISSION_GRANTED
-          && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
-        detectLocation();
-      } else {
-        if (!ActivityCompat
-            .shouldShowRequestPermissionRationale(this, permission.ACCESS_FINE_LOCATION) &&
-            !ActivityCompat
-                .shouldShowRequestPermissionRationale(this, permission.ACCESS_COARSE_LOCATION)) {
-          displaySettingsDialog(getString(R.string.enable_location),
-              getString(R.string.request_setting_message));
-        } else {
-          Toast.makeText(this, R.string.permission_denied, Toast.LENGTH_SHORT).show();
-        }
-      }
-    } else {
-      super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-    }
-  }
+//  @Override
+//  public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+//      @NonNull int[] grantResults) {
+//    if (requestCode == REQUEST_LOCATIONS) {
+//
+//      if (grantResults.length == 2
+//          && grantResults[0] == PackageManager.PERMISSION_GRANTED
+//          && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
+//        detectLocation();
+//      } else {
+//        if (!ActivityCompat
+//            .shouldShowRequestPermissionRationale(this, permission.ACCESS_FINE_LOCATION) &&
+//            !ActivityCompat
+//                .shouldShowRequestPermissionRationale(this, permission.ACCESS_COARSE_LOCATION)) {
+//          displaySettingsDialog(getString(R.string.enable_location),
+//              getString(R.string.request_setting_message));
+//        } else {
+//          Toast.makeText(this, R.string.permission_denied, Toast.LENGTH_SHORT).show();
+//        }
+//      }
+//    } else {
+//      super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+//    }
+//  }
 
   @Override
   protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
